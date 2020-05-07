@@ -1,13 +1,15 @@
 package com.mhmdawad.chatme
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.mhmdawad.chatme.pojo.UserData
+import com.mhmdawad.chatme.utils.RecyclerViewClick
 
-class ContactsAdapter : RecyclerView.Adapter<ContactsAdapter.ContactsViewHolder>() {
+class ContactsAdapter(private val clickedItem: RecyclerViewClick) : RecyclerView.Adapter<ContactsAdapter.ContactsViewHolder>() {
 
     private val contactList: ArrayList<UserData> = ArrayList()
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactsViewHolder =
@@ -22,14 +24,25 @@ class ContactsAdapter : RecyclerView.Adapter<ContactsAdapter.ContactsViewHolder>
         contactList.addAll(list)
         notifyDataSetChanged()
     }
-    inner class ContactsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class ContactsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView), View.OnClickListener{
         private var name: TextView = itemView.findViewById(R.id.contactNameTxt)
         private var number: TextView = itemView.findViewById(R.id.contactPhoneTxt)
+        private var inviteFriend: Button = itemView.findViewById(R.id.inviteFriend)
 
+        init {
+            itemView.setOnClickListener(this)
+        }
         fun bind(user: UserData){
-            name.text = user.name
-            number.text = user.number
-            Log.d("TAG", "name: $name \n number: $number")
+            name.text = user.Name
+            number.text = user.Number
+            if(!user.haveAccount)
+                inviteFriend.visibility = View.VISIBLE
+            else
+                inviteFriend.visibility = View.GONE
+        }
+
+        override fun onClick(v: View?) {
+            clickedItem.onItemClickedPosition(adapterPosition)
         }
     }
 }
