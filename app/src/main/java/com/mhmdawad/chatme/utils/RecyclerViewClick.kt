@@ -5,7 +5,7 @@ interface RecyclerViewClick {
     fun onItemClickedPosition(pos: Int){
 
     }
-    fun onItemClickedString(key: String){
+    fun onItemClickedString(key: String, userName:String){
 
     }
 }

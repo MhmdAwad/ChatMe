@@ -3,8 +3,9 @@ package com.mhmdawad.chatme
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.mhmdawad.chatme.pojo.UserData
 import com.mhmdawad.chatme.utils.RecyclerViewClick
@@ -21,13 +22,15 @@ class ContactsAdapter(private val clickedItem: RecyclerViewClick) : RecyclerView
 
     fun addContacts(list: ArrayList<UserData>){
         contactList.clear()
-        contactList.addAll(list)
+        list.sortBy {it.Name}
+        contactList.addAll(list.distinct())
         notifyDataSetChanged()
     }
     inner class ContactsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView), View.OnClickListener{
         private var name: TextView = itemView.findViewById(R.id.contactNameTxt)
         private var number: TextView = itemView.findViewById(R.id.contactPhoneTxt)
-        private var inviteFriend: Button = itemView.findViewById(R.id.inviteFriend)
+        private var image: ImageView = itemView.findViewById(R.id.contactImage)
+        private var container: ConstraintLayout = itemView.findViewById(R.id.container)
 
         init {
             itemView.setOnClickListener(this)
@@ -35,10 +38,10 @@ class ContactsAdapter(private val clickedItem: RecyclerViewClick) : RecyclerView
         fun bind(user: UserData){
             name.text = user.Name
             number.text = user.Number
-            if(!user.haveAccount)
-                inviteFriend.visibility = View.VISIBLE
+            if(user.haveAccount)
+                container.visibility = View.VISIBLE
             else
-                inviteFriend.visibility = View.GONE
+                container.visibility  = View.GONE
         }
 
         override fun onClick(v: View?) {

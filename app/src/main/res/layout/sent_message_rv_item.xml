@@ -5,18 +5,61 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp">
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp">
 
-    <TextView
-        android:id="@+id/text_message_body"
-        tools:text="hello, hello!"
-        android:background="@drawable/rounded_rectangle_white"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="240dp"
-        android:padding="8dp"
         android:layout_alignParentEnd="true"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:background="@drawable/sent_rectangle"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:maxWidth="240dp"
+        android:minWidth="100dp">
+
+        <TextView
+            android:id="@+id/text_message_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#000"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginTop="4dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="hello" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:gravity="center|end"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/text_message_body">
+
+            <TextView
+                android:id="@+id/messageDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:textColor="#BDBCBC"
+                android:text="9:32 PM" />
+
+            <ImageView
+                android:id="@+id/messageSeen"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_conversation_seen_message" />
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 </RelativeLayout>

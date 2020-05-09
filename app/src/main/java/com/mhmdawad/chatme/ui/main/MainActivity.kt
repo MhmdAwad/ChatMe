@@ -90,7 +90,7 @@ class MainActivity : AppCompatActivity() {
                         user["Phone"] = currentUser.phoneNumber!!
                         user["Uid"] = mAuth.uid!!
                         user["Image"] = ""
-
+                        user["Status"] = "I am using my WhatsApp :)"
                         userDB.updateChildren(user)
                         Log.d("TAG", "name ${user["Name"]} email ${user["Phone"]}")
                     }
