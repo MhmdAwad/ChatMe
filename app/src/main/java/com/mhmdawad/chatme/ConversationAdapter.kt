@@ -77,8 +77,8 @@ class ConversationAdapter : RecyclerView.Adapter<ConversationAdapter.Conversatio
         fun bind(user: MessageData) {
             messageBody.text = user.message
             messageDate.text = getDateFormat(user.date)
-            Log.d("PPP", "$unseenNumber - ${conversationList.size - unseenNumber} - ${conversationList.size}")
-            if(conversationList.size - unseenNumber <= adapterPosition){
+            Log.d("SeenX", "${(conversationList.size - unseenNumber) <= adapterPosition} - $adapterPosition - ${conversationList.size} - $unseenNumber")
+            if((conversationList.size - unseenNumber) <= adapterPosition && unseenNumber != 0){
                 messageSeen.setImageResource(R.drawable.ic_conversation_sent_message)
             }else{
                 messageSeen.setImageResource(R.drawable.ic_conversation_seen_message)

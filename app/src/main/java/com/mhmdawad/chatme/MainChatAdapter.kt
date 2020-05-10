@@ -1,12 +1,11 @@
 package com.mhmdawad.chatme
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Filter
-import android.widget.Filterable
-import android.widget.ImageView
-import android.widget.TextView
+import android.widget.*
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -25,6 +24,7 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
 
     private var chatList: ArrayList<MainChatData> = ArrayList()
     private lateinit var chatListFull: ArrayList<MainChatData>
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatsViewHolder =
         ChatsViewHolder(
             LayoutInflater.from(parent.context).inflate(
@@ -48,60 +48,59 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
         notifyDataSetChanged()
     }
 
-    inner class ChatsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView),
-        View.OnClickListener {
+    inner class ChatsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
         private var userName: TextView = itemView.findViewById(R.id.userName)
         private var lastMessage: TextView = itemView.findViewById(R.id.lastMessage)
         private var lastMessageDate: TextView = itemView.findViewById(R.id.lastMessageDate)
         private var unreadMessages: TextView = itemView.findViewById(R.id.unreadMessages)
         private var userImage: ImageView = itemView.findViewById(R.id.userImage)
         private val viewLine: View = itemView.findViewById(R.id.viewLine)
+        private val container: ConstraintLayout = itemView.findViewById(R.id.container)
+        private val insideContainer: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
 
         init {
-            itemView.setOnClickListener(this)
+            clickViews()
         }
 
         fun bind(user: MainChatData) {
-            viewLine.visibility =
-                if (adapterPosition == chatList.size - 1) View.GONE else View.VISIBLE
-            if (chatList[adapterPosition].offlineUserName == "null")
-                getUserUid(userName, chatList[adapterPosition].chatID, user.usersName)
+            Log.d("HIDE", chatList[0].userUid)
+            if (user.lastMessage != "") {
+                container.visibility = View.VISIBLE
+                viewLine.visibility =
+                    if (adapterPosition == chatList.size - 1) View.GONE else View.VISIBLE
 
-            userName.text = chatList[adapterPosition].offlineUserName
-            lastMessage.text = user.lastMessage
-            lastMessageDate.text = getDateFormat(user.lastMessageDate)
-            val unread = user.unreadMessage[FirebaseAuth.getInstance().uid]
-            if (unread == "0")
-                unreadMessages.visibility = View.GONE
-            else {
-                unreadMessages.visibility = View.VISIBLE
-                unreadMessages.text = unread
+                if (chatList[adapterPosition].offlineUserName == "null")
+                    userName.text =
+                        chatList[adapterPosition].usersPhone[chatList[adapterPosition].userUid]
+                else
+                    userName.text = chatList[adapterPosition].offlineUserName
+
+                lastMessage.text = user.lastMessage
+                lastMessageDate.text = getDateFormat(user.lastMessageDate)
+
+                val unread = user.unreadMessage[FirebaseAuth.getInstance().uid]
+                if (unread == "0")
+                    unreadMessages.visibility = View.GONE
+                else {
+                    unreadMessages.visibility = View.VISIBLE
+                    unreadMessages.text = unread
+                }
+            } else
+                container.visibility = View.GONE
+        }
+
+        private fun clickViews(){
+            insideContainer.setOnClickListener {
+                clickedItem.onChatClickedString(
+                    chatList[adapterPosition].chatID,
+                    userName.text.toString()
+                )
+            }
+            userImage.setOnClickListener {
+                Log.d("ZZZZ", chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!)
+                clickedItem.openUserImage(chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!)
             }
         }
-
-        override fun onClick(v: View?) {
-            clickedItem.onItemClickedString(
-                chatList[adapterPosition].chatID,
-                userName.text.toString()
-            )
-        }
-    }
-
-    private fun getUserUid(textView: TextView, chatID: String, usersName: HashMap<String, String>) {
-        FirebaseDatabase.getInstance().reference.child("Users")
-            .child(FirebaseAuth.getInstance().uid!!)
-            .child("chat").addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {}
-
-                override fun onDataChange(p0: DataSnapshot) {
-                    for (data in p0.children) {
-                        if (data.value == chatID) {
-                            textView.text = usersName[data.key]!!
-                        }
-                    }
-                }
-            })
-
     }
 
     private fun getDateFormat(date: String): String {

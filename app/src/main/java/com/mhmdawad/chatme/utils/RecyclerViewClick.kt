@@ -5,7 +5,10 @@ interface RecyclerViewClick {
     fun onItemClickedPosition(pos: Int){
 
     }
-    fun onItemClickedString(key: String, userName:String){
+    fun onChatClickedString(key: String, userName:String){
+
+    }
+    fun openUserImage(userImage: String){
 
     }
 }

@@ -7,22 +7,22 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.inputmethod.EditorInfo
 import android.widget.SearchView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import com.mhmdawad.chatme.MainChatAdapter
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.pojo.MainChatData
+import com.mhmdawad.chatme.pojo.UserChatData
 import com.mhmdawad.chatme.ui.contact.ContactsFragment
 import com.mhmdawad.chatme.ui.conversation.ConversationActivity
 import com.mhmdawad.chatme.ui.main.MainActivity
@@ -33,15 +33,22 @@ import com.mhmdawad.chatme.utils.RecyclerViewClick
 class MainPageActivity : AppCompatActivity(), RecyclerViewClick {
     private lateinit var mainPageChatRV: RecyclerView
     private lateinit var chatAdapter: MainChatAdapter
+    private lateinit var databaseRef: DatabaseReference
+    private lateinit var fetchConversationChild: DatabaseReference
+    private lateinit var fetchListener: ValueEventListener
+    private lateinit var chatInfoListener: ValueEventListener
+    private lateinit var chatInfoChild: DatabaseReference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_page)
 
+        databaseRef = FirebaseDatabase.getInstance().reference
         val findUserFab = findViewById<FloatingActionButton>(R.id.findUserFab)
         checkPermission()
         initRecyclerView()
         fetchConversations()
+
 
         findUserFab.setOnClickListener {
             checkPermission()
@@ -50,18 +57,24 @@ class MainPageActivity : AppCompatActivity(), RecyclerViewClick {
     }
 
     private fun fetchConversations() {
-        FirebaseDatabase.getInstance().reference.child("Users")
-            .child(FirebaseAuth.getInstance().uid!!)
-            .child("chat").addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {}
+        fetchConversationChild = databaseRef.child("Users").child(FirebaseAuth.getInstance().uid!!)
+            .child("chat")
+        fetchListener = fetchConversationChild.addValueEventListener(object : ValueEventListener {
+            override fun onCancelled(p0: DatabaseError) {}
 
-                override fun onDataChange(p0: DataSnapshot) {
-                    getChatInfo(p0)
+            override fun onDataChange(p0: DataSnapshot) {
+                if (p0.exists()) {
+                    val map = ArrayList<UserChatData>()
+                    for (data in p0.children)
+                        map.add(UserChatData(data.key!!, data.getValue(String::class.java)!!))
+
+                    getChatInfo(map)
                 }
-            })
+            }
+        })
     }
 
-    private fun profileContacts(){
+    private fun profileContacts() {
         if (supportFragmentManager.findFragmentById(android.R.id.content) == null) {
             supportFragmentManager.beginTransaction()
                 .add(android.R.id.content, ContactsFragment())
@@ -70,27 +83,36 @@ class MainPageActivity : AppCompatActivity(), RecyclerViewClick {
             supportActionBar!!.hide()
         }
     }
-    private fun getChatInfo(dataSnapShot: DataSnapshot) {
-        val chatObject: ArrayList<MainChatData> = ArrayList()
-        FirebaseDatabase.getInstance().reference.child("Chats")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {}
 
-                override fun onDataChange(p0: DataSnapshot) {
-                    if (p0.exists()) {
-                        for (data in dataSnapShot.children) {
+    private fun getChatInfo(myChat: ArrayList<UserChatData>) {
+        val chatList: ArrayList<MainChatData> = ArrayList()
+        chatInfoChild = databaseRef.child("Chats")
+        chatInfoListener = chatInfoChild.addValueEventListener(object : ValueEventListener {
+            override fun onCancelled(p0: DatabaseError) {}
+
+            override fun onDataChange(p0: DataSnapshot) {
+                if (p0.exists()) {
+                    for (data in myChat) {
+                        if (p0.child(data.userChat).child("Info").exists()) {
                             val chatData =
-                                p0.child(data.getValue(String::class.java)!!).child("Info")
+                                p0.child(data.userChat).child("Info")
                                     .getValue(MainChatData::class.java)!!
                             chatData.offlineUserName =
-                                getContactName(chatData.usersPhone[data.key]!!)
-                            chatObject.add(chatData)
-                            chatAdapter.addMainChats(chatObject)
+                                getContactName(
+                                    chatData.
+                                    usersPhone[
+                                        data.
+                                            userUid]!!)
+                            chatData.userUid = data.userUid
+                            chatList.add(chatData)
+                            chatAdapter.addMainChats(chatList)
                         }
-                        chatObject.clear()
                     }
                 }
-            })
+                chatList.clear()
+
+            }
+        })
     }
 
     private fun getContactName(number: String): String {
@@ -125,6 +147,7 @@ class MainPageActivity : AppCompatActivity(), RecyclerViewClick {
         startActivity(intent)
     }
 
+
     private fun initRecyclerView() {
         chatAdapter = MainChatAdapter(this)
         mainPageChatRV = findViewById(R.id.mainPageChatRV)
@@ -136,6 +159,7 @@ class MainPageActivity : AppCompatActivity(), RecyclerViewClick {
             adapter = chatAdapter
         }
     }
+
 
     private fun signOut() {
         FirebaseAuth.getInstance().signOut()
@@ -194,8 +218,27 @@ class MainPageActivity : AppCompatActivity(), RecyclerViewClick {
         }
     }
 
-    override fun onItemClickedString(key: String, userName: String) {
+    override fun onChatClickedString(key: String, userName: String) {
         startConversationActivity(key, userName)
+    }
+
+    override fun openUserImage(userImage: String) {
+        Log.d("imageee", userImage)
+    }
+
+    private fun deleteListeners() {
+        fetchConversationChild.removeEventListener(fetchListener)
+        chatInfoChild.removeEventListener(chatInfoListener)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        deleteListeners()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        fetchConversations()
     }
 
     override fun onBackPressed() {

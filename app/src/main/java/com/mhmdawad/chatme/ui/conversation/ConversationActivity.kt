@@ -12,10 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import com.mhmdawad.chatme.ConversationAdapter
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.pojo.MessageData
@@ -30,6 +27,12 @@ class ConversationActivity : AppCompatActivity() {
     private lateinit var conversationAdapter: ConversationAdapter
     private lateinit var typingStatus: TextView
     private lateinit var cameraButton: ImageButton
+    private lateinit var firebaseRef: DatabaseReference
+    private lateinit var typingListener: ValueEventListener
+    private lateinit var fetchMessagesListener: ValueEventListener
+    private lateinit var typingChild: DatabaseReference
+    private lateinit var fetchMessagesChild: DatabaseReference
+    private lateinit var userUid: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,20 +44,22 @@ class ConversationActivity : AppCompatActivity() {
         val sendMessage: FloatingActionButton = findViewById(R.id.sendMessageFab)
         val linearLayout: LinearLayout = findViewById(R.id.linearLayout)
         val userNameTxt: TextView = findViewById(R.id.userNameTxt)
+        firebaseRef = FirebaseDatabase.getInstance().reference
         iniButtons()
         typingStatus = findViewById(R.id.typingStatusTxt)
         userNameTxt.text = userName
+        getChatUsersUid(chatID!!)
         initContactsRecyclerView()
-        fetchMessages(chatID!!)
+        fetchMessages(chatID)
         seenMessages(chatID)
         getUserTypingStatus(chatID)
 
         linearLayout.setOnClickListener {
-            finish()
+            onBackPressed()
         }
         messageEditText.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
-                handler.removeCallbacksAndMessages(null);
+                handler.removeCallbacksAndMessages(null)
                 handler.postDelayed(userStoppedTyping, 400)
             }
 
@@ -63,16 +68,15 @@ class ConversationActivity : AppCompatActivity() {
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                if(messageEditText.text.isEmpty()) {
+                if (messageEditText.text.isEmpty()) {
                     sendMessage.setImageResource(R.drawable.ic_conversation_microphone)
                     cameraButton.visibility = View.VISIBLE
-                }
-                else {
+                } else {
                     sendMessage.setImageResource(R.drawable.ic_conversation_send)
                     cameraButton.visibility = View.GONE
+                    userTypingStatus(true, chatID)
                 }
 
-                    userTypingStatus(true, chatID)
             }
 
             val handler = Handler()
@@ -81,8 +85,10 @@ class ConversationActivity : AppCompatActivity() {
             }
         })
         sendMessage.setOnClickListener {
-            sendMessage(messageEditText.text.toString(), chatID)
-            messageEditText.text.clear()
+            if(messageEditText.text.isNotEmpty()) {
+                sendMessage(messageEditText.text.toString(), chatID)
+                messageEditText.text.clear()
+            }
         }
     }
 
@@ -91,20 +97,19 @@ class ConversationActivity : AppCompatActivity() {
         cameraButton = findViewById(R.id.cameraButton)
         val paperClipButton: ImageButton = findViewById(R.id.paperClipButton)
         emojiButton.setOnClickListener {
-            Toast.makeText(applicationContext, "Emoji",Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, "Emoji", Toast.LENGTH_SHORT).show()
         }
         cameraButton.setOnClickListener {
-            Toast.makeText(applicationContext, "Camera",Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, "Camera", Toast.LENGTH_SHORT).show()
         }
         paperClipButton.setOnClickListener {
-            Toast.makeText(applicationContext, "Paper Clip",Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, "Paper Clip", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun getUserTypingStatus(chatId: String) {
-        FirebaseDatabase.getInstance().reference.child("Chats").child(chatId).child("Info")
-            .child("typing")
-            .addValueEventListener(object : ValueEventListener {
+        typingChild = firebaseRef.child("Chats").child(chatId).child("Info").child("typing")
+        typingListener = typingChild.addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                     return
                 }
@@ -129,7 +134,7 @@ class ConversationActivity : AppCompatActivity() {
             .child("typing").child(FirebaseAuth.getInstance().uid!!)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
-                    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+                    return
                 }
 
                 override fun onDataChange(p0: DataSnapshot) {
@@ -151,26 +156,40 @@ class ConversationActivity : AppCompatActivity() {
 
     private fun fetchMessages(chatID: String) {
         val chatList: ArrayList<MessageData> = ArrayList()
-        FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
-            .child("messages").addValueEventListener(object : ValueEventListener {
+        fetchMessagesChild = firebaseRef.child("Chats").child(chatID)
+        fetchMessagesListener = fetchMessagesChild.addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}
 
                 override fun onDataChange(p0: DataSnapshot) {
                     if (p0.exists()) {
                         chatList.clear()
-                        for (data in p0.children) {
+                        for (data in p0.child("messages").children) {
                             val chat: MessageData = data.getValue(MessageData::class.java)!!
                             chatList.add(chat)
                         }
                     }
                     seenMessages(chatID)
+                    getUnseenMessages(chatID)
                     conversationAdapter.addMessage(chatList)
-                    getChatUsersUid(chatID,"",false)
-                    chatMessagesRV.scrollToPosition(chatList.size-1)
+                    chatMessagesRV.scrollToPosition(chatList.size - 1)
                 }
             })
     }
 
+    private fun deleteListeners() {
+        typingChild.removeEventListener(typingListener)
+        fetchMessagesChild.removeEventListener(fetchMessagesListener)
+        Toast.makeText(applicationContext, "DELETE", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        deleteListeners()
+    }
+
+//    override fun onResume() {
+//        super.onResume()
+//    }
 
     private fun sendMessage(message: String, chatID: String) {
         val key = FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
@@ -178,29 +197,26 @@ class ConversationActivity : AppCompatActivity() {
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
             .child("messages").child(key)
             .setValue(MessageData(FirebaseAuth.getInstance().uid!!, message))
-        getChatUsersUid(chatID, message, true)
+        incrementUnreadValue(chatID,message)
     }
 
-    private fun getChatUsersUid(chatID: String, message: String, incrementValue: Boolean) {
+    private fun getChatUsersUid(chatID: String) {
         FirebaseDatabase.getInstance().reference.child("Users")
             .child(FirebaseAuth.getInstance().uid!!).child("chat")
-            .addValueEventListener(object : ValueEventListener {
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}
 
                 override fun onDataChange(p0: DataSnapshot) {
                     if (p0.exists())
                         for (data in p0.children) {
                             if (data.getValue(String::class.java) == chatID) {
-                                val userUid = data.key
-                                if (incrementValue)
-                                incrementUnreadValue(chatID, message, userUid!!)
-                                else
-                                    getUnseenMessages(chatID, userUid!!)
+                                userUid = data.key!!
                             }
                         }
                 }
             })
     }
+
 
     private fun seenMessages(chatID: String) {
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
@@ -215,25 +231,22 @@ class ConversationActivity : AppCompatActivity() {
             })
     }
 
-    private fun getUnseenMessages(chatID: String, userUid: String){
+    private fun getUnseenMessages(chatID: String) {
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
-            .child("Info").addValueEventListener(object : ValueEventListener {
+            .child("Info").child("unreadMessage").child(userUid)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {
                     return
                 }
 
                 override fun onDataChange(p0: DataSnapshot) {
-                    var num =
-                        p0.child("unreadMessage").child(userUid).getValue(String::class.java)
-                            ?.toInt()
-                    if(num == null)
-                        num = 1
-
-                    conversationAdapter.unSeenMessages(num)
+                    val num = p0.getValue(String::class.java)
+                    conversationAdapter.unSeenMessages(num!!.toInt())
                 }
             })
     }
-    private fun incrementUnreadValue(chatID: String, message: String, userUid: String) {
+
+    private fun incrementUnreadValue(chatID: String, message: String) {
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
             .child("Info").addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}
@@ -245,16 +258,15 @@ class ConversationActivity : AppCompatActivity() {
                     if (num == null) {
                         p0.ref.child("unreadMessage").child(userUid)
                             .setValue("1")
-                        num = 1
                     } else {
                         p0.ref.child("unreadMessage").child(userUid)
                             .setValue((++num).toString())
                     }
-                    Log.d("PPP", "$num")
                     p0.ref.child("chatID").setValue(chatID)
                     p0.ref.child("lastMessage").setValue(message)
                     p0.ref.child("lastMessageDate").setValue(
-                        SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Date()))
+                        SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Date())
+                    )
                     p0.ref.child("unreadMessage").child(FirebaseAuth.getInstance().uid!!)
                         .setValue("0")
                 }

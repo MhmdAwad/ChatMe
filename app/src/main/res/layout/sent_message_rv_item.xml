@@ -58,7 +58,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_marginEnd="4dp"
-                android:src="@drawable/ic_conversation_seen_message" />
+                android:src="@drawable/ic_conversation_sent_message" />
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
