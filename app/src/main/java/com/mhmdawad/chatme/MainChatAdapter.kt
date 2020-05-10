@@ -14,6 +14,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.mhmdawad.chatme.pojo.MainChatData
 import com.mhmdawad.chatme.utils.RecyclerViewClick
+import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -48,12 +49,12 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
         notifyDataSetChanged()
     }
 
-    inner class ChatsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView){
+    inner class ChatsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private var userName: TextView = itemView.findViewById(R.id.userName)
         private var lastMessage: TextView = itemView.findViewById(R.id.lastMessage)
         private var lastMessageDate: TextView = itemView.findViewById(R.id.lastMessageDate)
         private var unreadMessages: TextView = itemView.findViewById(R.id.unreadMessages)
-        private var userImage: ImageView = itemView.findViewById(R.id.userImage)
+        private var userImage: ImageView = itemView.findViewById(R.id.includeImage)
         private val viewLine: View = itemView.findViewById(R.id.viewLine)
         private val container: ConstraintLayout = itemView.findViewById(R.id.container)
         private val insideContainer: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
@@ -63,9 +64,12 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
         }
 
         fun bind(user: MainChatData) {
-            Log.d("HIDE", chatList[0].userUid)
             if (user.lastMessage != "") {
                 container.visibility = View.VISIBLE
+
+                if (user.usersImage[chatList[adapterPosition].userUid]!!.startsWith("https://firebasestorage"))
+                    Picasso.get().load(user.usersImage[chatList[adapterPosition].userUid]).into(userImage)
+
                 viewLine.visibility =
                     if (adapterPosition == chatList.size - 1) View.GONE else View.VISIBLE
 
@@ -84,22 +88,25 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
                 else {
                     unreadMessages.visibility = View.VISIBLE
                     unreadMessages.text = unread
+
                 }
             } else
                 container.visibility = View.GONE
         }
 
-        private fun clickViews(){
+        private fun clickViews() {
+            userImage.setOnClickListener {
+
+                clickedItem.openUserImage(chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!)
+            }
             insideContainer.setOnClickListener {
                 clickedItem.onChatClickedString(
                     chatList[adapterPosition].chatID,
-                    userName.text.toString()
+                    userName.text.toString(),
+                    chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!
                 )
             }
-            userImage.setOnClickListener {
-                Log.d("ZZZZ", chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!)
-                clickedItem.openUserImage(chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!)
-            }
+
         }
     }
 

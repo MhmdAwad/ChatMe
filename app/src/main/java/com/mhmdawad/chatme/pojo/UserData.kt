@@ -5,5 +5,6 @@ data class UserData (
     var Name: String,
     var Number: String,
     var Image: String,
+    var Statue: String,
     var haveAccount: Boolean = false
 )

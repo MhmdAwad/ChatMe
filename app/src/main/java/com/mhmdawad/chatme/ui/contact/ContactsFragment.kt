@@ -5,11 +5,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.telephony.TelephonyManager
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
@@ -42,6 +42,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
         savedInstanceState: Bundle?
     ): View? {
         rootView = inflater.inflate(R.layout.fragment_contacts, container, false)
+        (activity as AppCompatActivity).supportActionBar!!.hide()
         initViews()
         initContactsRecyclerView()
         getContactsList()
@@ -90,7 +91,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
                 if (number[0] != '+') {
                     number = getCountryISO() + number
                 }
-                val data = UserData("", name, number, "")
+                val data = UserData("", name, number, "","")
                 getUserInfo(data)
             }
             cursor.close()
@@ -108,6 +109,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
                         for (data in p0.children) {
                             userData.uid = data.child("Uid").value.toString()
                             userData.Image = data.child("Image").value.toString()
+                            userData.Statue = data.child("Status").value.toString()
                         }
                         userData.haveAccount = true
                         if (userData.Number != myPhoneNumber)
@@ -227,18 +229,19 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
                     if (!isExist)
                         key = createNewConversation(pos)
 
-                    startConversationActivity(key, usersList[pos].Name)
+                    startConversationActivity(key, usersList[pos].Name, usersList[pos].Image)
                 }
             })
     }
 
-    private fun startConversationActivity(key: String, name: String) {
+    private fun startConversationActivity(key: String, name: String, image: String) {
         val intent = Intent(
             activity!!.applicationContext,
             ConversationActivity::class.java
         )
         intent.putExtra("chatID", key)
         intent.putExtra("userName", name)
+        intent.putExtra("userImage", image)
         startActivity(intent)
     }
 
@@ -262,6 +265,6 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
 
     override fun onBackPressed() {
         activity!!.supportFragmentManager.popBackStack()
-        (activity as MainPageActivity).supportActionBar!!.show()
+        (activity as AppCompatActivity).supportActionBar!!.show()
     }
 }

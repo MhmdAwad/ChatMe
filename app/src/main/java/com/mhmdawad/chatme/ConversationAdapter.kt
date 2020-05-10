@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.mhmdawad.chatme.pojo.MessageData
 import com.mhmdawad.chatme.utils.RecyclerViewClick
+import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -71,10 +72,17 @@ class ConversationAdapter : RecyclerView.Adapter<ConversationAdapter.Conversatio
 
     inner class ConversationViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private var messageBody: TextView = itemView.findViewById(R.id.text_message_body)
+        private var imageBody: ImageView = itemView.findViewById(R.id.image_message_body)
         private var messageDate: TextView = itemView.findViewById(R.id.messageDate)
         private var messageSeen: ImageView = itemView.findViewById(R.id.messageSeen)
 
         fun bind(user: MessageData) {
+            if(user.mediaPath.startsWith("https://firebasestorage")){
+                imageBody.visibility = View.VISIBLE
+                Picasso.get().load(user.mediaPath).into(imageBody)
+            }else{
+                imageBody.visibility = View.GONE
+            }
             messageBody.text = user.message
             messageDate.text = getDateFormat(user.date)
             Log.d("SeenX", "${(conversationList.size - unseenNumber) <= adapterPosition} - $adapterPosition - ${conversationList.size} - $unseenNumber")

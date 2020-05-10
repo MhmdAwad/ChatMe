@@ -1,5 +1,8 @@
 package com.mhmdawad.chatme.ui.conversation
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.text.Editable
@@ -13,9 +16,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.storage.FirebaseStorage
 import com.mhmdawad.chatme.ConversationAdapter
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.pojo.MessageData
+import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -33,26 +38,34 @@ class ConversationActivity : AppCompatActivity() {
     private lateinit var typingChild: DatabaseReference
     private lateinit var fetchMessagesChild: DatabaseReference
     private lateinit var userUid: String
+    private lateinit var  chatID: String
+    private var mediaPath: Uri? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_conversation)
 
-        val chatID = intent.extras?.getString("chatID")
+        chatID = intent.extras?.getString("chatID")!!
         val userName = intent.extras?.getString("userName")
+        val userImage = intent.extras?.getString("userImage")
         val messageEditText: EditText = findViewById(R.id.messageEditText)
         val sendMessage: FloatingActionButton = findViewById(R.id.sendMessageFab)
         val linearLayout: LinearLayout = findViewById(R.id.linearLayout)
         val userNameTxt: TextView = findViewById(R.id.userNameTxt)
+        val userImageView: ImageView = findViewById(R.id.includeImage)
+
+        if(userImage != "")
+            Picasso.get().load(userImage).into(userImageView)
         firebaseRef = FirebaseDatabase.getInstance().reference
         iniButtons()
         typingStatus = findViewById(R.id.typingStatusTxt)
         userNameTxt.text = userName
-        getChatUsersUid(chatID!!)
+        getChatUsersUid()
         initContactsRecyclerView()
-        fetchMessages(chatID)
-        seenMessages(chatID)
-        getUserTypingStatus(chatID)
+        fetchMessages()
+        seenMessages()
+        getUserTypingStatus()
 
         linearLayout.setOnClickListener {
             onBackPressed()
@@ -74,22 +87,42 @@ class ConversationActivity : AppCompatActivity() {
                 } else {
                     sendMessage.setImageResource(R.drawable.ic_conversation_send)
                     cameraButton.visibility = View.GONE
-                    userTypingStatus(true, chatID)
+                    userTypingStatus("Typing..", chatID)
                 }
 
             }
 
             val handler = Handler()
             var userStoppedTyping = Runnable {
-                userTypingStatus(false, chatID)
+                userTypingStatus("Online", chatID)
             }
         })
         sendMessage.setOnClickListener {
-            if(messageEditText.text.isNotEmpty()) {
+            if(mediaPath != null){
+                addMedia(messageEditText.text.toString())
+                messageEditText.text.clear()
+            } else if (messageEditText.text.isNotEmpty()) {
                 sendMessage(messageEditText.text.toString(), chatID)
                 messageEditText.text.clear()
             }
         }
+    }
+    private fun checkUserMood(){
+        FirebaseDatabase.getInstance().reference.child("Users").child(userUid).child("mood")
+            .addValueEventListener(object: ValueEventListener{
+                override fun onCancelled(p0: DatabaseError) {
+                    return
+                }
+
+                override fun onDataChange(p0: DataSnapshot) {
+                    if(p0.exists()) {
+                        typingStatus.text = p0.getValue(String::class.java)!!
+                        if(typingStatus.text == "")
+                            typingStatus.visibility = View.GONE
+                    }
+
+                }
+            })
     }
 
     private fun iniButtons() {
@@ -100,36 +133,68 @@ class ConversationActivity : AppCompatActivity() {
             Toast.makeText(applicationContext, "Emoji", Toast.LENGTH_SHORT).show()
         }
         cameraButton.setOnClickListener {
-            Toast.makeText(applicationContext, "Camera", Toast.LENGTH_SHORT).show()
+            chooseImage()
         }
         paperClipButton.setOnClickListener {
             Toast.makeText(applicationContext, "Paper Clip", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun getUserTypingStatus(chatId: String) {
-        typingChild = firebaseRef.child("Chats").child(chatId).child("Info").child("typing")
+    private fun getUserTypingStatus() {
+        typingChild = firebaseRef.child("Chats").child(chatID).child("Info").child("typing")
         typingListener = typingChild.addValueEventListener(object : ValueEventListener {
-                override fun onCancelled(p0: DatabaseError) {
-                    return
-                }
+            override fun onCancelled(p0: DatabaseError) {
+                return
+            }
 
-                override fun onDataChange(p0: DataSnapshot) {
-                    if (p0.exists())
-                        for (data in p0.children) {
-                            if (data.key != FirebaseAuth.getInstance().uid) {
-                                if (data.getValue(String::class.java) == "true")
-                                    typingStatus.text = "Typing.."
-                                else
-                                    typingStatus.text = "Online"
-                            }
-                        }
-
-                }
-            })
+            override fun onDataChange(p0: DataSnapshot) {
+                if (p0.exists())
+                    for (data in p0.children) {
+                        if (data.key != FirebaseAuth.getInstance().uid)
+                                typingStatus.text = data.getValue(String::class.java)!!
+                    }
+            }
+        })
     }
 
-    private fun userTypingStatus(isTyping: Boolean, chatID: String) {
+    private fun chooseImage() {
+        val intent = Intent()
+        intent.type = "image/*"
+        intent.action = Intent.ACTION_GET_CONTENT
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), 101)
+    }
+
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 101 && resultCode == Activity.RESULT_OK && data != null && data.data != null) {
+            mediaPath = data.data!!
+        }
+    }
+
+    private fun addMedia(message: String) {
+        val fileName = "media/ ${UUID.randomUUID()}"
+        val filepath = FirebaseStorage.getInstance().reference.child(fileName)
+        filepath.putFile(mediaPath!!).addOnSuccessListener {
+            filepath.downloadUrl.addOnSuccessListener {
+                Toast.makeText(applicationContext, "Image Sent", Toast.LENGTH_SHORT)
+                    .show()
+                mediaPath = it
+                sendMessage(message, mediaPath.toString())
+            }
+        }.addOnFailureListener {
+            Toast.makeText(
+                applicationContext,
+                "Error with upload the image",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun userTypingStatus(status: String, chatID: String) {
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID).child("Info")
             .child("typing").child(FirebaseAuth.getInstance().uid!!)
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -138,7 +203,7 @@ class ConversationActivity : AppCompatActivity() {
                 }
 
                 override fun onDataChange(p0: DataSnapshot) {
-                    p0.ref.setValue(isTyping.toString())
+                    p0.ref.setValue(status)
                 }
             })
 
@@ -154,10 +219,11 @@ class ConversationActivity : AppCompatActivity() {
         }
     }
 
-    private fun fetchMessages(chatID: String) {
+    private fun fetchMessages() {
         val chatList: ArrayList<MessageData> = ArrayList()
         fetchMessagesChild = firebaseRef.child("Chats").child(chatID)
-        fetchMessagesListener = fetchMessagesChild.addValueEventListener(object : ValueEventListener {
+        fetchMessagesListener =
+            fetchMessagesChild.addValueEventListener(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}
 
                 override fun onDataChange(p0: DataSnapshot) {
@@ -168,7 +234,7 @@ class ConversationActivity : AppCompatActivity() {
                             chatList.add(chat)
                         }
                     }
-                    seenMessages(chatID)
+                    seenMessages()
                     getUnseenMessages(chatID)
                     conversationAdapter.addMessage(chatList)
                     chatMessagesRV.scrollToPosition(chatList.size - 1)
@@ -187,20 +253,22 @@ class ConversationActivity : AppCompatActivity() {
         deleteListeners()
     }
 
-//    override fun onResume() {
-//        super.onResume()
-//    }
+    override fun onResume() {
+        super.onResume()
+        fetchMessages()
+    }
 
-    private fun sendMessage(message: String, chatID: String) {
+    private fun sendMessage(message: String, image: String) {
         val key = FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
             .child("messages").push().key!!
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
             .child("messages").child(key)
-            .setValue(MessageData(FirebaseAuth.getInstance().uid!!, message))
-        incrementUnreadValue(chatID,message)
+            .setValue(MessageData(FirebaseAuth.getInstance().uid!!, message,mediaPath = image))
+
+        incrementUnreadValue(chatID, message)
     }
 
-    private fun getChatUsersUid(chatID: String) {
+    private fun getChatUsersUid() {
         FirebaseDatabase.getInstance().reference.child("Users")
             .child(FirebaseAuth.getInstance().uid!!).child("chat")
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -211,6 +279,7 @@ class ConversationActivity : AppCompatActivity() {
                         for (data in p0.children) {
                             if (data.getValue(String::class.java) == chatID) {
                                 userUid = data.key!!
+                                checkUserMood()
                             }
                         }
                 }
@@ -218,7 +287,7 @@ class ConversationActivity : AppCompatActivity() {
     }
 
 
-    private fun seenMessages(chatID: String) {
+    private fun seenMessages() {
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
             .child("Info").addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}

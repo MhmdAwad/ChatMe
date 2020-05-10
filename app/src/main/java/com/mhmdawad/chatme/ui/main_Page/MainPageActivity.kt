@@ -9,20 +9,29 @@ import android.os.Bundle
 import android.provider.ContactsContract
 import android.util.Log
 import android.view.Menu
+import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.inputmethod.EditorInfo
+import android.widget.LinearLayout
 import android.widget.SearchView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager.widget.ViewPager
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.tabs.TabLayout
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.mhmdawad.chatme.MainChatAdapter
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.pojo.MainChatData
 import com.mhmdawad.chatme.pojo.UserChatData
+import com.mhmdawad.chatme.ui.FragmentTabsAdapter
+import com.mhmdawad.chatme.ui.MainCallsFragment
+import com.mhmdawad.chatme.ui.MainMessagesFragment
+import com.mhmdawad.chatme.ui.MainStatusFragment
 import com.mhmdawad.chatme.ui.contact.ContactsFragment
 import com.mhmdawad.chatme.ui.conversation.ConversationActivity
 import com.mhmdawad.chatme.ui.main.MainActivity
@@ -30,154 +39,33 @@ import com.mhmdawad.chatme.ui.profile_setting.SettingsFragment
 import com.mhmdawad.chatme.utils.RecyclerViewClick
 
 
-class MainPageActivity : AppCompatActivity(), RecyclerViewClick {
-    private lateinit var mainPageChatRV: RecyclerView
-    private lateinit var chatAdapter: MainChatAdapter
-    private lateinit var databaseRef: DatabaseReference
-    private lateinit var fetchConversationChild: DatabaseReference
-    private lateinit var fetchListener: ValueEventListener
-    private lateinit var chatInfoListener: ValueEventListener
-    private lateinit var chatInfoChild: DatabaseReference
+class MainPageActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_page)
 
-        databaseRef = FirebaseDatabase.getInstance().reference
-        val findUserFab = findViewById<FloatingActionButton>(R.id.findUserFab)
-        checkPermission()
-        initRecyclerView()
-        fetchConversations()
-
-
-        findUserFab.setOnClickListener {
-            checkPermission()
-            profileContacts()
-        }
+        addViewPagerFragments()
+        Toast.makeText(applicationContext, "HI",Toast.LENGTH_SHORT).show()
     }
-
-    private fun fetchConversations() {
-        fetchConversationChild = databaseRef.child("Users").child(FirebaseAuth.getInstance().uid!!)
-            .child("chat")
-        fetchListener = fetchConversationChild.addValueEventListener(object : ValueEventListener {
-            override fun onCancelled(p0: DatabaseError) {}
-
-            override fun onDataChange(p0: DataSnapshot) {
-                if (p0.exists()) {
-                    val map = ArrayList<UserChatData>()
-                    for (data in p0.children)
-                        map.add(UserChatData(data.key!!, data.getValue(String::class.java)!!))
-
-                    getChatInfo(map)
-                }
-            }
-        })
-    }
-
-    private fun profileContacts() {
-        if (supportFragmentManager.findFragmentById(android.R.id.content) == null) {
-            supportFragmentManager.beginTransaction()
-                .add(android.R.id.content, ContactsFragment())
-                .addToBackStack(null)
-                .commit()
-            supportActionBar!!.hide()
-        }
-    }
-
-    private fun getChatInfo(myChat: ArrayList<UserChatData>) {
-        val chatList: ArrayList<MainChatData> = ArrayList()
-        chatInfoChild = databaseRef.child("Chats")
-        chatInfoListener = chatInfoChild.addValueEventListener(object : ValueEventListener {
-            override fun onCancelled(p0: DatabaseError) {}
-
-            override fun onDataChange(p0: DataSnapshot) {
-                if (p0.exists()) {
-                    for (data in myChat) {
-                        if (p0.child(data.userChat).child("Info").exists()) {
-                            val chatData =
-                                p0.child(data.userChat).child("Info")
-                                    .getValue(MainChatData::class.java)!!
-                            chatData.offlineUserName =
-                                getContactName(
-                                    chatData.
-                                    usersPhone[
-                                        data.
-                                            userUid]!!)
-                            chatData.userUid = data.userUid
-                            chatList.add(chatData)
-                            chatAdapter.addMainChats(chatList)
-                        }
-                    }
-                }
-                chatList.clear()
-
-            }
-        })
-    }
-
-    private fun getContactName(number: String): String {
-        var name = "null"
-        val projection = arrayOf(
-            ContactsContract.PhoneLookup.DISPLAY_NAME,
-            ContactsContract.PhoneLookup._ID
-        )
-        val contactUri = Uri.withAppendedPath(
-            ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-            Uri.encode(number)
-        )
-        val cursor: Cursor? =
-            contentResolver.query(contactUri, projection, null, null, null)
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                name =
-                    cursor.getString(cursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME))
-            }
-            cursor.close()
-        }
-        return name
-    }
-
-    private fun startConversationActivity(key: String, userName: String) {
-        val intent = Intent(
-            applicationContext,
-            ConversationActivity::class.java
-        )
-        intent.putExtra("chatID", key)
-        intent.putExtra("userName", userName)
-        startActivity(intent)
-    }
-
-
-    private fun initRecyclerView() {
-        chatAdapter = MainChatAdapter(this)
-        mainPageChatRV = findViewById(R.id.mainPageChatRV)
-        mainPageChatRV.apply {
-            layoutManager = LinearLayoutManager(
-                applicationContext,
-                LinearLayoutManager.VERTICAL, false
-            )
-            adapter = chatAdapter
-        }
-    }
-
-
-    private fun signOut() {
-        FirebaseAuth.getInstance().signOut()
-        val intent = Intent(applicationContext, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-        startActivity(intent)
-        finish()
-    }
-
-    private fun checkPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val readContact = android.Manifest.permission.READ_CONTACTS
-            val writeContact = android.Manifest.permission.WRITE_CONTACTS
-            if (checkCallingOrSelfPermission(writeContact) != PackageManager.PERMISSION_GRANTED ||
-                checkCallingOrSelfPermission(readContact) != PackageManager.PERMISSION_GRANTED
-            )
-                requestPermissions(arrayOf(readContact, writeContact), 100)
-        }
+    private fun addViewPagerFragments(){
+        val viewPager = findViewById<ViewPager>(R.id.mainPageViewPager)
+        val tabLayout = findViewById<TabLayout>(R.id.mainPageTabLayout)
+        supportActionBar!!.elevation = 0F
+        val fragmentAdapter = FragmentTabsAdapter(supportFragmentManager)
+        fragmentAdapter.addFragment(MainCallsFragment(), "")
+        fragmentAdapter.addFragment(MainMessagesFragment(), "Chat")
+        fragmentAdapter.addFragment(MainStatusFragment(), "Status")
+        fragmentAdapter.addFragment(MainCallsFragment(), "Calls")
+        viewPager.adapter=  fragmentAdapter
+        tabLayout.setupWithViewPager(viewPager)
+        tabLayout.getTabAt(0)!!.setIcon(R.drawable.main_page_camera)
+        val layout = ( ( tabLayout.getChildAt(0) as LinearLayout).getChildAt(0) as LinearLayout)
+        val layoutParams =  layout.layoutParams as LinearLayout.LayoutParams
+        layoutParams.weight = 0.4f
+        layout.layoutParams = layoutParams
+        tabLayout.getTabAt(1)!!.select()
+        viewPager.offscreenPageLimit = 4
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -192,13 +80,13 @@ class MainPageActivity : AppCompatActivity(), RecyclerViewClick {
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                chatAdapter.filter.filter(newText)
+                MainMessagesFragment.chatAdapter.filter.filter(newText)
                 return false
             }
         })
-
         return true
     }
+
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
@@ -208,46 +96,47 @@ class MainPageActivity : AppCompatActivity(), RecyclerViewClick {
         return true
     }
 
+
+    private fun signOut() {
+        FirebaseDatabase.getInstance().reference.child("Users").child(FirebaseAuth.getInstance().uid!!)
+            .child("mood").setValue("")
+        FirebaseAuth.getInstance().signOut()
+        val intent = Intent(applicationContext, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+        startActivity(intent)
+        finish()
+    }
+
     private fun profileSettings() {
         if (supportFragmentManager.findFragmentById(android.R.id.content) == null) {
             supportFragmentManager.beginTransaction()
                 .add(android.R.id.content, SettingsFragment())
                 .addToBackStack(null)
                 .commit()
-            supportActionBar!!.hide()
         }
     }
-
-    override fun onChatClickedString(key: String, userName: String) {
-        startConversationActivity(key, userName)
-    }
-
-    override fun openUserImage(userImage: String) {
-        Log.d("imageee", userImage)
-    }
-
-    private fun deleteListeners() {
-        fetchConversationChild.removeEventListener(fetchListener)
-        chatInfoChild.removeEventListener(chatInfoListener)
-    }
-
     override fun onPause() {
         super.onPause()
-        deleteListeners()
+        if(FirebaseAuth.getInstance().uid != null)
+        FirebaseDatabase.getInstance().reference.child("Users")
+            .child(FirebaseAuth.getInstance().uid!!)
+            .child("mood").setValue("")
     }
-
     override fun onResume() {
         super.onResume()
-        fetchConversations()
+        FirebaseDatabase.getInstance().reference.child("Users")
+            .child(FirebaseAuth.getInstance().uid!!)
+            .child("mood").setValue("Online")
     }
 
     override fun onBackPressed() {
+        Toast.makeText(applicationContext, "HIr",Toast.LENGTH_SHORT).show()
         val fragments = supportFragmentManager.fragments
         for (fragment in fragments) {
             if (fragment != null) {
                 if (fragment is SettingsFragment)
                     fragment.onBackPressed()
-                else if (fragment is ContactsFragment)
+                else if (fragment is MainMessagesFragment)
                     fragment.onBackPressed()
                 return
             }

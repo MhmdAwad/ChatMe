@@ -122,11 +122,10 @@
                     android:layout_height="30dp"
                     app:srcCompat="@drawable/ic_arrow_back" />
 
-                <ImageView
+                <include
+                    layout="@layout/circle_image_view"
                     android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:background="@drawable/circle_white_shapte"
-                    app:srcCompat="@drawable/ic_default_user" />
+                    android:layout_height="30dp"/>
             </LinearLayout>
 
             <LinearLayout
