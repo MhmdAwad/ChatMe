@@ -11,9 +11,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <include
+        <ImageView
             android:id="@+id/includeLayout"
-            layout="@layout/circle_image_view"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:layout_marginStart="8dp"
@@ -61,7 +60,8 @@
                 android:textAlignment="viewStart"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/unreadMessages"
-                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/lastImageView"
+                app:layout_constraintTop_toBottomOf="@+id/userName"
                 tools:text="محمد عوض" />
 
             <TextView
@@ -72,7 +72,7 @@
                 android:ellipsize="end"
                 android:gravity="center"
                 android:maxLines="1"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@color/lightColor"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:text="5:22 AM" />
@@ -91,6 +91,27 @@
                 app:layout_constraintHorizontal_bias="1.0"
                 app:layout_constraintStart_toStartOf="@+id/lastMessageDate"
                 tools:text="5" />
+
+            <ImageView
+                android:id="@+id/seenImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/userName"
+                app:srcCompat="@drawable/ic_conversation_sent_message" />
+
+            <ImageView
+                android:id="@+id/lastImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/seenImageView"
+                app:layout_constraintTop_toBottomOf="@+id/userName"
+                app:srcCompat="@drawable/ic_main_page_image" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <View

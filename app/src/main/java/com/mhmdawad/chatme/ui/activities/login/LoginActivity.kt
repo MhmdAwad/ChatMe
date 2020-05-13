@@ -1,9 +1,8 @@
-package com.mhmdawad.chatme.ui.main
+package com.mhmdawad.chatme.ui.activities.login
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -17,38 +16,41 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.mhmdawad.chatme.R
-import com.mhmdawad.chatme.ui.main_Page.MainPageActivity
+import com.mhmdawad.chatme.ui.activities.main_page.MainPageActivity
 import java.util.concurrent.TimeUnit
 
-class MainActivity : AppCompatActivity() {
+class LoginActivity : AppCompatActivity() {
 
 
     private lateinit var mCallbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
     private var verificationID: String? = null
     private lateinit var mAuth: FirebaseAuth
+    private lateinit var phoneEditText: EditText
+    private lateinit var phoneButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_login)
 
-        val phoneEditText = findViewById<EditText>(R.id.et_phone)
-        val phoneButton = findViewById<Button>(R.id.bt_send)
-        val verifyEditText = findViewById<EditText>(R.id.et_verify)
-        val verifyButton = findViewById<Button>(R.id.bt_verify)
+        phoneEditText = findViewById(R.id.loginEditText)
+        phoneButton = findViewById(R.id.loginButton)
         mAuth = FirebaseAuth.getInstance()
 
         userLogIn()
-        verifyButton.setOnClickListener {
-            verifyNumberWithCode(verificationID!!, verifyEditText.text.toString())
-        }
         phoneButton.setOnClickListener {
-            val phoneNumber = phoneEditText.text.toString().trim()
-            if (phoneNumber.length < 10 || phoneNumber.isEmpty()) {
-                phoneEditText.error = "Enter a valid number"
-                phoneEditText.requestFocus()
-                return@setOnClickListener
+            if (phoneButton.text.toString().toLowerCase() == "submit") {
+                val phoneNumber = phoneEditText.text.toString().trim()
+                if (phoneNumber.length < 10) {
+                    phoneEditText.error = "Enter a valid number"
+                    phoneEditText.requestFocus()
+                    return@setOnClickListener
+                }
+                phoneButton.text = "Verify"
+                verifyNumber(phoneNumber)
+            }else{
+                verifyNumberWithCode(verificationID!!, phoneEditText.text.toString())
             }
-            verifyNumber(phoneNumber)
+
         }
 
         mCallbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
@@ -59,13 +61,17 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onVerificationFailed(p0: FirebaseException?) {
-                Toast.makeText(applicationContext, "onVerificationFailed $p0", Toast.LENGTH_SHORT)
+                Toast.makeText(applicationContext, "An error occurred, Please try again.", Toast.LENGTH_SHORT)
                     .show()
+                phoneEditText.hint = "Enter phone number"
+                phoneButton.text = "submit"
             }
 
             override fun onCodeSent(p0: String?, p1: PhoneAuthProvider.ForceResendingToken?) {
                 super.onCodeSent(p0, p1)
                 verificationID = p0
+                phoneEditText.text.clear()
+                phoneEditText.hint = "Enter verification code"
             }
         }
     }
@@ -79,20 +85,18 @@ class MainActivity : AppCompatActivity() {
         FirebaseAuth.getInstance().signInWithCredential(credential).addOnCompleteListener {
             if (it.isSuccessful) {
                 val currentUser = mAuth.currentUser!!
-                val userDB = FirebaseDatabase.getInstance().reference.child("Users")
-                    .child(currentUser.uid)
+                val userDB = FirebaseDatabase.getInstance().reference
+                    .child("Users").child(currentUser.uid)
                 userDB.addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onCancelled(p0: DatabaseError) {}
 
                     override fun onDataChange(p0: DataSnapshot) {
                         val user: HashMap<String, Any> = HashMap()
-                        user["Name"] = currentUser.phoneNumber!!
                         user["Phone"] = currentUser.phoneNumber!!
                         user["Uid"] = mAuth.uid!!
                         user["Image"] = ""
                         user["Status"] = "I am using my WhatsApp :)"
                         userDB.updateChildren(user)
-                        Log.d("TAG", "name ${user["Name"]} email ${user["Phone"]}")
                     }
                 })
                 userLogIn()

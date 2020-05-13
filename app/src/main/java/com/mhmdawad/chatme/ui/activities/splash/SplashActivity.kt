@@ -1,11 +1,11 @@
-package com.mhmdawad.chatme.ui.splash
+package com.mhmdawad.chatme.ui.activities.splash
 
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import androidx.appcompat.app.AppCompatActivity
 import com.mhmdawad.chatme.R
-import com.mhmdawad.chatme.ui.main.MainActivity
+import com.mhmdawad.chatme.ui.activities.login.LoginActivity
 
 
 class SplashActivity : AppCompatActivity() {
@@ -15,7 +15,7 @@ class SplashActivity : AppCompatActivity() {
         setContentView(R.layout.activity_splash)
 
         Handler().postDelayed({
-            val mainIntent = Intent(applicationContext, MainActivity::class.java)
+            val mainIntent = Intent(applicationContext, LoginActivity::class.java)
             startActivity(mainIntent)
             finish()
         }, 2000)

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/conversation_background"
-    tools:context=".ui.conversation.ConversationActivity">
+    tools:context=".ui.activities.conversation.ConversationActivity">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chatMessagesRV"
@@ -32,7 +32,7 @@
         app:layout_constraintEnd_toStartOf="@+id/sendMessageFab"
         app:layout_constraintStart_toStartOf="parent">
 
-        <EditText
+        <hani.momanii.supernova_emoji_library.Helper.EmojiconEditText
             android:id="@+id/messageEditText"
             android:layout_width="0dp"
             android:layout_height="0dp"
@@ -47,6 +47,7 @@
             app:layout_constraintEnd_toStartOf="@+id/paperClipButton"
             app:layout_constraintStart_toEndOf="@+id/emojiButton"
             app:layout_constraintTop_toTopOf="parent" />
+
 
         <ImageButton
             android:id="@+id/emojiButton"
@@ -122,8 +123,10 @@
                     android:layout_height="30dp"
                     app:srcCompat="@drawable/ic_arrow_back" />
 
-                <include
-                    layout="@layout/circle_image_view"
+                <ImageView
+                    android:id="@+id/imageView"
+                    android:src="@drawable/ic_default_user"
+                    android:background="@drawable/circle_white_shape"
                     android:layout_width="30dp"
                     android:layout_height="30dp"/>
             </LinearLayout>
@@ -149,7 +152,7 @@
                     tools:text="TextView" />
 
                 <TextView
-                    android:id="@+id/typingStatusTxt"
+                    android:id="@+id/typingStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"

@@ -1,6 +1,6 @@
-package com.mhmdawad.chatme
+package com.mhmdawad.chatme.adapters
 
-import android.util.Log
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,17 +8,14 @@ import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.pojo.MainChatData
+import com.mhmdawad.chatme.utils.CircleTransform
 import com.mhmdawad.chatme.utils.RecyclerViewClick
 import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
     RecyclerView.Adapter<MainChatAdapter.ChatsViewHolder>(), Filterable {
@@ -54,7 +51,9 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
         private var lastMessage: TextView = itemView.findViewById(R.id.lastMessage)
         private var lastMessageDate: TextView = itemView.findViewById(R.id.lastMessageDate)
         private var unreadMessages: TextView = itemView.findViewById(R.id.unreadMessages)
-        private var userImage: ImageView = itemView.findViewById(R.id.includeImage)
+        private var userImage: ImageView = itemView.findViewById(R.id.includeLayout)
+        private var seenImageView: ImageView = itemView.findViewById(R.id.seenImageView)
+        private var lastImageView: ImageView = itemView.findViewById(R.id.lastImageView)
         private val viewLine: View = itemView.findViewById(R.id.viewLine)
         private val container: ConstraintLayout = itemView.findViewById(R.id.container)
         private val insideContainer: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
@@ -63,22 +62,54 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
             clickViews()
         }
 
+        var selectedUserName = ""
         fun bind(user: MainChatData) {
-            if (user.lastMessage != "") {
+            if (user.lastMessage != "" || user.mediaType == "Photo" || user.mediaType == "Voice Record") {
                 container.visibility = View.VISIBLE
 
+                when (user.mediaType) {
+                    "Photo" -> {
+                        lastImageView.visibility = View.VISIBLE
+                        user.lastMessage = "Photo"
+                    }
+                    "Voice Record" -> {
+                        lastImageView.visibility = View.VISIBLE
+                        user.lastMessage = "Voice Record"
+                    }
+                    else -> lastImageView.visibility = View.GONE
+                }
+
+                if (user.unreadMessage[FirebaseAuth.getInstance().uid]!!.toInt() != 0) {
+                    seenImageView.setImageResource(R.drawable.ic_conversation_seen_message)
+                    lastMessageDate.setTextColor(Color.parseColor("#25D366"))
+                    if (user.mediaType == "Voice Record")
+                        lastImageView.setImageResource(R.drawable.seen_record)
+                } else {
+                    seenImageView.setImageResource(R.drawable.ic_conversation_sent_message)
+                    lastMessageDate.setTextColor(Color.parseColor("#808080"))
+                    if (user.mediaType == "Voice Record")
+                        lastImageView.setImageResource(R.drawable.gray_microphone)
+                }
+                if (user.lastSender == FirebaseAuth.getInstance().uid!!) {
+                    seenImageView.visibility = View.VISIBLE
+                } else
+                    seenImageView.visibility = View.GONE
+
                 if (user.usersImage[chatList[adapterPosition].userUid]!!.startsWith("https://firebasestorage"))
-                    Picasso.get().load(user.usersImage[chatList[adapterPosition].userUid]).into(userImage)
+                    Picasso.get().load(user.usersImage[chatList[adapterPosition].userUid])
+                        .transform(CircleTransform()).into(userImage)
+                else
+                    userImage.setImageResource(R.drawable.ic_default_user)
 
                 viewLine.visibility =
                     if (adapterPosition == chatList.size - 1) View.GONE else View.VISIBLE
 
-                if (chatList[adapterPosition].offlineUserName == "null")
-                    userName.text =
-                        chatList[adapterPosition].usersPhone[chatList[adapterPosition].userUid]
+                selectedUserName = if (chatList[adapterPosition].offlineUserName == "null")
+                    chatList[adapterPosition].usersPhone[chatList[adapterPosition].userUid]!!
                 else
-                    userName.text = chatList[adapterPosition].offlineUserName
+                    chatList[adapterPosition].offlineUserName
 
+                userName.text = selectedUserName
                 lastMessage.text = user.lastMessage
                 lastMessageDate.text = getDateFormat(user.lastMessageDate)
 
@@ -97,7 +128,10 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
         private fun clickViews() {
             userImage.setOnClickListener {
 
-                clickedItem.openUserImage(chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!)
+                clickedItem.openUserImage(
+                    chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!,
+                    selectedUserName
+                )
             }
             insideContainer.setOnClickListener {
                 clickedItem.onChatClickedString(

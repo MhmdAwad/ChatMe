@@ -1,4 +1,4 @@
-package com.mhmdawad.chatme.ui.contact
+package com.mhmdawad.chatme.ui.fragments.contact
 
 import android.content.Context
 import android.content.Intent
@@ -17,12 +17,11 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.mhmdawad.chatme.ContactsAdapter
+import com.mhmdawad.chatme.adapters.ContactsAdapter
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.pojo.MainChatData
 import com.mhmdawad.chatme.pojo.UserData
-import com.mhmdawad.chatme.ui.conversation.ConversationActivity
-import com.mhmdawad.chatme.ui.main_Page.MainPageActivity
+import com.mhmdawad.chatme.ui.activities.main_page.MainPageActivity
 import com.mhmdawad.chatme.utils.CountryISO
 import com.mhmdawad.chatme.utils.RecyclerViewClick
 import kotlinx.android.synthetic.main.fragment_contacts.view.*
@@ -54,6 +53,11 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
         rootView.toolbarName.text = "Contacts"
     }
 
+    private fun createNewGroup(){
+        rootView.newGroup.setOnClickListener {
+
+        }
+    }
     private fun initContactsRecyclerView() {
         contactsAdapter = ContactsAdapter(this)
         rootView.contactsRV.apply {
@@ -70,6 +74,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
     private fun getContactsList() {
         usersList = ArrayList()
         getMyPhoneNumber("", 0, false)
+
         val cursor = activity!!.contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
             null,
@@ -88,10 +93,10 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
                 number = number.replace("-", "")
                 number = number.replace(")", "")
                 number = number.replace("(", "")
-                if (number[0] != '+') {
+                if (number[0] != '+')
                     number = getCountryISO() + number
-                }
-                val data = UserData("", name, number, "","")
+
+                val data = UserData("", name, number, "", "")
                 getUserInfo(data)
             }
             cursor.close()
@@ -235,11 +240,9 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
     }
 
     private fun startConversationActivity(key: String, name: String, image: String) {
-        val intent = Intent(
-            activity!!.applicationContext,
-            ConversationActivity::class.java
-        )
-        intent.putExtra("chatID", key)
+        activity!!.supportFragmentManager.popBackStack()
+        val intent = Intent()
+        intent.putExtra("ChatID", key)
         intent.putExtra("userName", name)
         intent.putExtra("userImage", image)
         startActivity(intent)
