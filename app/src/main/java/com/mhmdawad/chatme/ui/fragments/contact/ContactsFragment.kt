@@ -8,7 +8,6 @@ import android.telephony.TelephonyManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -21,7 +20,9 @@ import com.mhmdawad.chatme.adapters.ContactsAdapter
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.pojo.MainChatData
 import com.mhmdawad.chatme.pojo.UserData
+import com.mhmdawad.chatme.ui.activities.conversation.ConversationActivity
 import com.mhmdawad.chatme.ui.activities.main_page.MainPageActivity
+import com.mhmdawad.chatme.ui.fragments.create_group.CreateGroupFragment
 import com.mhmdawad.chatme.utils.CountryISO
 import com.mhmdawad.chatme.utils.RecyclerViewClick
 import kotlinx.android.synthetic.main.fragment_contacts.view.*
@@ -45,6 +46,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
         initViews()
         initContactsRecyclerView()
         getContactsList()
+        createNewGroup()
         return rootView
     }
 
@@ -55,7 +57,12 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
 
     private fun createNewGroup(){
         rootView.newGroup.setOnClickListener {
-
+            activity!!.supportFragmentManager.popBackStack()
+            val fragment = CreateGroupFragment.newInstance(usersList)
+            activity!!.supportFragmentManager.beginTransaction()
+                .add(android.R.id.content, fragment)
+                .addToBackStack(null)
+                .commit()
         }
     }
     private fun initContactsRecyclerView() {
@@ -73,7 +80,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
 
     private fun getContactsList() {
         usersList = ArrayList()
-        getMyPhoneNumber("", 0, false)
+        getMyPhoneNumber("", null, false)
 
         val cursor = activity!!.contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
@@ -119,6 +126,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
                         userData.haveAccount = true
                         if (userData.Number != myPhoneNumber)
                             usersList.add(userData)
+
                         contactsAdapter.addContacts(usersList)
                     }
 
@@ -142,18 +150,18 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
         getContactsList()
     }
 
-    private fun createNewConversation(pos: Int): String {
+    private fun createNewConversation(user: UserData): String {
         val key = FirebaseDatabase.getInstance().reference.child("chat").push().key!!
         FirebaseDatabase.getInstance().reference.child("Users")
             .child(FirebaseAuth.getInstance().uid!!)
-            .child("chat").child(usersList[pos].uid).setValue(key)
-        FirebaseDatabase.getInstance().reference.child("Users").child(usersList[pos].uid)
+            .child("chat").child(user.uid).setValue(key)
+        FirebaseDatabase.getInstance().reference.child("Users").child(user.uid)
             .child("chat").child(FirebaseAuth.getInstance().uid!!).setValue(key)
-        getMyPhoneNumber(key, pos, true)
+        getMyPhoneNumber(key, user, true)
         return key
     }
 
-    private fun getMyPhoneNumber(key: String, pos: Int, addUserPhone: Boolean) {
+    private fun getMyPhoneNumber(key: String, user: UserData?, addUserPhone: Boolean) {
         FirebaseDatabase.getInstance().reference.child("Users")
             .child(FirebaseAuth.getInstance().uid!!)
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -165,7 +173,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
                     myPhoneNumber = p0.child("Phone").getValue(String::class.java)!!
                     val myImage = p0.child("Image").getValue(String::class.java)!!
                     if (addUserPhone)
-                        addUsersData(key, myPhoneNumber, myImage, pos)
+                        addUsersData(key, myPhoneNumber, myImage, user!!)
                 }
             })
     }
@@ -182,29 +190,29 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
         return phones
     }
 
-    private fun addUsersData(key: String, myPhone: String, myImage: String, pos: Int) {
+    private fun addUsersData(key: String, myPhone: String, myImage: String, user: UserData) {
         val data = MainChatData(
             key,
             "",
             usersPhone = reuseHashMap(
                 FirebaseAuth.getInstance().uid!!,
-                usersList[pos].uid,
+                user.uid,
                 myPhone,
-                usersList[pos].Number
+                user.Number
             )
             ,
             unreadMessage = reuseHashMap(
                 FirebaseAuth.getInstance().uid!!,
-                usersList[pos].uid,
+                user.uid,
                 "0",
                 "0"
             )
             ,
             usersImage = reuseHashMap(
                 FirebaseAuth.getInstance().uid!!,
-                usersList[pos].uid,
+                user.uid,
                 myImage,
-                usersList[pos].Image
+                user.Image
             )
         )
 
@@ -213,7 +221,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
 
     }
 
-    private fun checkConversationStatus(pos: Int) {
+    private fun checkConversationStatus(user: UserData) {
         FirebaseDatabase.getInstance().reference.child("Users")
             .child(FirebaseAuth.getInstance().uid!!).child("chat")
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -224,7 +232,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
                     var key = ""
                     if (p0.exists()) {
                         for (data in p0.children) {
-                            if (data.key == usersList[pos].uid) {
+                            if (data.key == user.uid) {
                                 isExist = true
                                 key = p0.child(data.key.toString()).getValue(String::class.java)!!
                                 break
@@ -232,38 +240,28 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
                         }
                     }
                     if (!isExist)
-                        key = createNewConversation(pos)
+                        key = createNewConversation(user)
 
-                    startConversationActivity(key, usersList[pos].Name, usersList[pos].Image)
+
+                    startConversationActivity(key, user.Name, user.Image, user.uid)
                 }
             })
     }
 
-    private fun startConversationActivity(key: String, name: String, image: String) {
-        activity!!.supportFragmentManager.popBackStack()
-        val intent = Intent()
+    private fun startConversationActivity(key: String, name: String, image: String, uid: String) {
+        val intent = Intent(activity!!.applicationContext, ConversationActivity::class.java)
         intent.putExtra("ChatID", key)
         intent.putExtra("userName", name)
         intent.putExtra("userImage", image)
+        intent.putExtra("chatType", "direct")
+        intent.putExtra("userUid", uid)
+
         startActivity(intent)
+        onBackPressed()
     }
 
-    override fun onItemClickedPosition(pos: Int) {
-        if (usersList[pos].haveAccount) {
-            checkConversationStatus(pos)
-            Toast.makeText(
-                activity!!.applicationContext,
-                "item clicked is ${usersList[pos].Name}",
-                Toast.LENGTH_SHORT
-            ).show()
-        } else {
-            Toast.makeText(
-                activity!!.applicationContext,
-                "invite ${usersList[pos].Name}",
-                Toast.LENGTH_SHORT
-            )
-                .show()
-        }
+    override fun onItemClickedPosition(data: UserData) {
+        checkConversationStatus(data)
     }
 
     override fun onBackPressed() {

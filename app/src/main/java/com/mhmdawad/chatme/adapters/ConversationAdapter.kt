@@ -18,9 +18,13 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 
-class ConversationAdapter(private val clickedItem: RecyclerViewClick) :
+class ConversationAdapter(
+    private val clickedItem: RecyclerViewClick,
+    private val chatType: String
+) :
     RecyclerView.Adapter<ConversationAdapter.ConversationViewHolder>() {
 
     companion object {
@@ -28,10 +32,14 @@ class ConversationAdapter(private val clickedItem: RecyclerViewClick) :
         private const val VIEW_TYPE_MESSAGE_RECEIVED = 2
     }
 
+    private var unseenNumber: Int = 0
+    private var myImage: String = ""
+    private var userImage: String = ""
     private val conversationList: ArrayList<MessageData> = ArrayList()
-    private lateinit var mediaPlayer: MediaPlayer
+    private var mediaPlayer: MediaPlayer? = null
     private var timer: Timer? = null
     private var lastMessagesSize = 0
+    private val userNameColors = HashMap<String, Int>()
 
     override fun getItemViewType(position: Int): Int {
         return if (FirebaseAuth.getInstance().uid == conversationList[position].senderUid) {
@@ -70,23 +78,25 @@ class ConversationAdapter(private val clickedItem: RecyclerViewClick) :
         conversationList.clear()
         conversationList.addAll(message)
         conversationList.sortedBy { it.date }
-        if(lastMessagesSize < message.size && message[message.size-1].senderUid != FirebaseAuth.getInstance().uid)
+        if (lastMessagesSize < message.size && message[message.size - 1].senderUid != FirebaseAuth.getInstance().uid)
             clickedItem.receivedNewMessage()
         lastMessagesSize = message.size
         notifyDataSetChanged()
     }
 
-    private var unseenNumber: Int = 0
     fun unSeenMessages(num: Int) {
         unseenNumber = num
         notifyDataSetChanged()
     }
 
-    private var myImage: String = ""
-    private var userImage: String = ""
-    fun addUsersImage(myImage: String, userImage: String) {
-        this.myImage = myImage
-        this.userImage = userImage
+    private val usersImages = HashMap<String, String>()
+    private val usersNames = HashMap<String, String>()
+    fun addUsersImage(usersImages: HashMap<String, String>) {
+        this.usersImages.putAll(usersImages)
+    }
+
+    fun addUsersName(groupUsersName: HashMap<String, String>) {
+        usersNames.putAll(groupUsersName)
     }
 
     inner class ConversationViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
@@ -100,12 +110,12 @@ class ConversationAdapter(private val clickedItem: RecyclerViewClick) :
         private val recordPlay: ImageButton = itemView.findViewById(R.id.recordPlay)
         private val recordSeekBar: SeekBar = itemView.findViewById(R.id.recordSeekbar)
         private val recordMicImage: ImageView = itemView.findViewById(R.id.recordMicImage)
+        private val groupUserName: TextView = itemView.findViewById(R.id.groupUserName)
 
         init {
             itemView.setOnClickListener(this)
             recordPlay.setOnClickListener {
                 closeTimer(recordSeekBar)
-                stopMediaPlayer()
                 playRecord(conversationList[adapterPosition].mediaPath, recordSeekBar, recordPlay)
             }
         }
@@ -121,6 +131,10 @@ class ConversationAdapter(private val clickedItem: RecyclerViewClick) :
                     imageBody.visibility = View.GONE
                     recordContainer.visibility = View.VISIBLE
                     messageBody.visibility = View.GONE
+                    if (usersImages[user.senderUid] != "")
+                        Picasso.get().load(usersImages[user.senderUid]).transform(CircleTransform()).into(recordImage)
+                    else
+                        recordImage.setImageResource(R.drawable.ic_default_user)
                 }
                 "Photo" -> {
                     imageBody.visibility = View.VISIBLE
@@ -130,17 +144,7 @@ class ConversationAdapter(private val clickedItem: RecyclerViewClick) :
                 }
             }
 
-            if (user.senderUid == FirebaseAuth.getInstance().uid!!) {
-                if (myImage != "")
-                    Picasso.get().load(myImage).transform(CircleTransform()).into(recordImage)
-                else
-                    recordImage.setImageResource(R.drawable.ic_default_user)
-            } else {
-                if (userImage != "")
-                    Picasso.get().load(userImage).transform(CircleTransform()).into(recordImage)
-                else
-                    recordImage.setImageResource(R.drawable.ic_default_user)
-            }
+
 
             if (user.message == "")
                 messageBody.visibility = View.GONE
@@ -150,17 +154,46 @@ class ConversationAdapter(private val clickedItem: RecyclerViewClick) :
             }
             messageDate.text = getDateFormat(user.date)
 
-            if ((conversationList.size - unseenNumber) <= adapterPosition && unseenNumber != 0) {
-                messageSeen.setImageResource(R.drawable.ic_conversation_sent_message)
-                recordSeekBar.progressDrawable.setTint(Color.parseColor("#25D366"))
-                recordSeekBar.thumb.setTint(Color.parseColor("#25D366"))
-                recordMicImage.setImageResource(R.drawable.sent_record)
-            } else {
-                messageSeen.setImageResource(R.drawable.ic_conversation_seen_message)
-                recordSeekBar.progressDrawable.setTint(Color.parseColor("#00BCD4"))
-                recordSeekBar.thumb.setTint(Color.parseColor("#00BCD4"))
-                recordMicImage.setImageResource(R.drawable.seen_record)
+            if (chatType == "direct")
+                bindDirectChat()
+            else if (chatType == "group")
+                bindGroupChat(user)
+
+
+        }
+
+        private fun bindGroupChat(user: MessageData) {
+            recordSeekBar.progressDrawable.setTint(Color.parseColor("#808080"))
+            recordSeekBar.thumb.setTint(Color.parseColor("#808080"))
+            recordMicImage.setImageResource(R.drawable.gray_microphone)
+            if (user.senderUid != FirebaseAuth.getInstance().uid) {
+                groupUserName.visibility = View.VISIBLE
+                groupUserName.text = usersNames[user.senderUid]
+                groupUserName.setTextColor(randomUserNameColor(user.senderUid))
             }
+        }
+
+        private fun bindDirectChat() {
+            if ((conversationList.size - unseenNumber) <= adapterPosition && unseenNumber != 0) {
+                bindSent()
+                return
+            } else {
+                bindSeen()
+            }
+        }
+
+        private fun bindSent() {
+            recordSeekBar.progressDrawable.setTint(Color.parseColor("#25D366"))
+            recordSeekBar.thumb.setTint(Color.parseColor("#25D366"))
+            recordMicImage.setImageResource(R.drawable.sent_record)
+            messageSeen.setImageResource(R.drawable.ic_done)
+        }
+
+        private fun bindSeen() {
+            recordSeekBar.progressDrawable.setTint(Color.parseColor("#00BCD4"))
+            recordSeekBar.thumb.setTint(Color.parseColor("#00BCD4"))
+            recordMicImage.setImageResource(R.drawable.seen_record)
+            messageSeen.setImageResource(R.drawable.ic_conversation_seen_message)
         }
 
 
@@ -179,35 +212,25 @@ class ConversationAdapter(private val clickedItem: RecyclerViewClick) :
     private fun playRecord(voiceLink: String, seekBar: SeekBar, recordPlay: ImageButton) {
         mediaPlayer = MediaPlayer()
         try {
-            mediaPlayer.setDataSource(voiceLink)
-            mediaPlayer.prepareAsync()
-            mediaPlayer.setOnPreparedListener {
+            mediaPlayer?.setDataSource(voiceLink)
+            mediaPlayer?.prepareAsync()
+            mediaPlayer?.setOnPreparedListener {
+                mediaPlayer?.start()
                 seekBar.max = it.duration
-                mediaPlayer.start()
                 recordPlay.setImageResource(R.drawable.ic_pause_record)
                 Log.d("Duration", "${it.duration}")
             }
         } catch (e: IOException) {
             Log.d("error", "$e")
         }
-        mediaPlayer.setOnCompletionListener {
+        mediaPlayer?.setOnCompletionListener {
             closeTimer(seekBar)
-            stopMediaPlayer()
+            mediaPlayer?.reset()
             recordPlay.setImageResource(R.drawable.ic_play_record)
         }
         seekBarDuration(seekBar)
     }
 
-    private fun stopMediaPlayer() {
-        if (this::mediaPlayer.isInitialized) {
-            try {
-                mediaPlayer.stop()
-                mediaPlayer.release()
-            } catch (e: IllegalStateException) {
-
-            }
-        }
-    }
 
     private fun seekBarDuration(
         seekBar: SeekBar
@@ -215,8 +238,7 @@ class ConversationAdapter(private val clickedItem: RecyclerViewClick) :
         timer = Timer()
         timer!!.scheduleAtFixedRate(object : TimerTask() {
             override fun run() {
-                seekBar.progress = mediaPlayer.currentPosition
-                Log.d("Duration", "${mediaPlayer.currentPosition}")
+                seekBar.progress = mediaPlayer!!.currentPosition
             }
         }, 0, 100)
     }
@@ -234,6 +256,21 @@ class ConversationAdapter(private val clickedItem: RecyclerViewClick) :
         val formatDate = input.parse(date)
         return output.format(formatDate!!)
     }
+
+    private fun randomUserNameColor(userName: String): Int {
+        if (!userNameColors.containsKey(userName)) {
+            val rnd = Random()
+            val color = Color.argb(
+                255,
+                rnd.nextInt(256),
+                rnd.nextInt(256),
+                rnd.nextInt(256)
+            )
+            userNameColors[userName] = color
+        }
+        return userNameColors[userName]!!
+    }
+
 }
 
 

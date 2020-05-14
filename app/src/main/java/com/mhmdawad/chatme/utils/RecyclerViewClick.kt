@@ -1,13 +1,14 @@
 package com.mhmdawad.chatme.utils
 
-import android.widget.SeekBar
+import com.mhmdawad.chatme.pojo.UserData
+
 
 interface RecyclerViewClick {
 
-    fun onItemClickedPosition(pos: Int){
+    fun onItemClickedPosition(data: UserData){
 
     }
-    fun onChatClickedString(key: String, userName:String, userImage: String){
+    fun onChatClickedString(key: String, userName:String, userImage: String,chatType:String, userUid: String){
 
     }
     fun openUserImage(userImage: String, userName: String){

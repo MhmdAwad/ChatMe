@@ -34,9 +34,7 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
 
     override fun getItemCount(): Int = chatList.size
 
-    override fun onBindViewHolder(holder: ChatsViewHolder, position: Int) {
-        holder.bind(chatList[position])
-    }
+    override fun onBindViewHolder(holder: ChatsViewHolder, position: Int) = holder.bind(chatList[position])
 
     fun addMainChats(user: ArrayList<MainChatData>) {
         chatList.clear()
@@ -58,89 +56,149 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
         private val container: ConstraintLayout = itemView.findViewById(R.id.container)
         private val insideContainer: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
 
-        init {
-            clickViews()
-        }
 
-        var selectedUserName = ""
         fun bind(user: MainChatData) {
-            if (user.lastMessage != "" || user.mediaType == "Photo" || user.mediaType == "Voice Record") {
-                container.visibility = View.VISIBLE
-
-                when (user.mediaType) {
-                    "Photo" -> {
-                        lastImageView.visibility = View.VISIBLE
-                        user.lastMessage = "Photo"
-                    }
-                    "Voice Record" -> {
-                        lastImageView.visibility = View.VISIBLE
-                        user.lastMessage = "Voice Record"
-                    }
-                    else -> lastImageView.visibility = View.GONE
-                }
-
-                if (user.unreadMessage[FirebaseAuth.getInstance().uid]!!.toInt() != 0) {
-                    seenImageView.setImageResource(R.drawable.ic_conversation_seen_message)
-                    lastMessageDate.setTextColor(Color.parseColor("#25D366"))
-                    if (user.mediaType == "Voice Record")
-                        lastImageView.setImageResource(R.drawable.seen_record)
-                } else {
-                    seenImageView.setImageResource(R.drawable.ic_conversation_sent_message)
-                    lastMessageDate.setTextColor(Color.parseColor("#808080"))
-                    if (user.mediaType == "Voice Record")
-                        lastImageView.setImageResource(R.drawable.gray_microphone)
-                }
-                if (user.lastSender == FirebaseAuth.getInstance().uid!!) {
-                    seenImageView.visibility = View.VISIBLE
-                } else
-                    seenImageView.visibility = View.GONE
-
-                if (user.usersImage[chatList[adapterPosition].userUid]!!.startsWith("https://firebasestorage"))
-                    Picasso.get().load(user.usersImage[chatList[adapterPosition].userUid])
-                        .transform(CircleTransform()).into(userImage)
-                else
-                    userImage.setImageResource(R.drawable.ic_default_user)
-
-                viewLine.visibility =
-                    if (adapterPosition == chatList.size - 1) View.GONE else View.VISIBLE
-
-                selectedUserName = if (chatList[adapterPosition].offlineUserName == "null")
-                    chatList[adapterPosition].usersPhone[chatList[adapterPosition].userUid]!!
-                else
-                    chatList[adapterPosition].offlineUserName
-
-                userName.text = selectedUserName
-                lastMessage.text = user.lastMessage
-                lastMessageDate.text = getDateFormat(user.lastMessageDate)
-
-                val unread = user.unreadMessage[FirebaseAuth.getInstance().uid]
-                if (unread == "0")
-                    unreadMessages.visibility = View.GONE
-                else {
-                    unreadMessages.visibility = View.VISIBLE
-                    unreadMessages.text = unread
-
-                }
-            } else
+            if (user.lastMessage == ""){
                 container.visibility = View.GONE
+                return
+            }
+            container.visibility = View.VISIBLE
+            when (user.mediaType) {
+                "Photo" -> {
+                    lastImageView.visibility = View.VISIBLE
+//                    user.lastMessage = "Photo"
+                }
+                "Voice Record" -> {
+                    lastImageView.visibility = View.VISIBLE
+//                    user.lastMessage = "Voice Record"
+                }
+                else -> lastImageView.visibility = View.GONE
+            }
+
+            checkSeenMessages(
+                user.unreadMessage[FirebaseAuth.getInstance().uid]!!.toInt(),
+                user.mediaType,
+                user.lastSender
+            )
+
+            checkUnreadMessagesNumber(user.unreadMessage[FirebaseAuth.getInstance().uid]!!)
+
+            viewLine.visibility =
+                if (adapterPosition == chatList.size - 1) View.GONE else View.VISIBLE
+
+
+            lastMessage.text = user.lastMessage
+            lastMessageDate.text = getDateFormat(user.lastMessageDate)
+            if(user.chatType == "direct") bindDirect(user)
+            else if(user.chatType == "group") bindGroups(user)
+
+            clickViews()
+
+        }
+        private fun bindDirect(user: MainChatData){
+            checkItemImage(user.usersImage[chatList[adapterPosition].userUid]!!)
+            userName.text = chatList[adapterPosition].offlineUserName
+            userImage.setBackgroundResource(R.drawable.circle_white_shape)
         }
 
-        private fun clickViews() {
-            userImage.setOnClickListener {
+        private fun bindGroups(user: MainChatData) {
+            userName.text = user.groupName
+            if(user.groupImage == "") {
+                userImage.setImageResource(R.drawable.ic_group_black_24dp)
+                userImage.setBackgroundResource(R.drawable.group_background_color)
+                userImage.setPadding(8, 8, 8, 8)
+            }else
+                Picasso.get().load(user.groupImage).transform(CircleTransform()).into(userImage)
+        }
 
+
+        private fun checkSeenMessages(
+            unreadCount: Int,
+            mediaType: String,
+            lastSender: String
+        ) {
+            if (unreadCount != 0) {
+                seenImageView.setImageResource(R.drawable.ic_conversation_seen_message)
+                lastMessageDate.setTextColor(Color.parseColor("#25D366"))
+                if (mediaType == "Voice Record")
+                    lastImageView.setImageResource(R.drawable.seen_record)
+                else
+                    lastImageView.setImageResource(R.drawable.ic_main_page_image)
+            } else {
+                seenImageView.setImageResource(R.drawable.ic_conversation_sent_message)
+                lastMessageDate.setTextColor(Color.parseColor("#808080"))
+                if (mediaType == "Voice Record")
+                    lastImageView.setImageResource(R.drawable.gray_microphone)
+                else
+                    lastImageView.setImageResource(R.drawable.ic_main_page_image)
+            }
+            if (lastSender == FirebaseAuth.getInstance().uid!!)
+                seenImageView.visibility = View.VISIBLE
+            else
+                seenImageView.visibility = View.GONE
+        }
+
+        private fun clickGroupChat() {
+            userImage.setOnClickListener {
                 clickedItem.openUserImage(
-                    chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!,
-                    selectedUserName
+                    chatList[adapterPosition].groupImage,
+                    chatList[adapterPosition].groupName
                 )
             }
             insideContainer.setOnClickListener {
                 clickedItem.onChatClickedString(
                     chatList[adapterPosition].chatID,
                     userName.text.toString(),
-                    chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!
+                    chatList[adapterPosition].groupImage,
+                    "group",
+                    ""
                 )
             }
 
+        }
+
+        private fun clickViews(){
+            if(chatList[adapterPosition].chatType == "direct")
+                clickDirectChat()
+            else if(chatList[adapterPosition].chatType == "group")
+                clickGroupChat()
+        }
+
+        private fun clickDirectChat() {
+            userImage.setOnClickListener {
+                clickedItem.openUserImage(
+                    chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!,
+                    chatList[adapterPosition].offlineUserName
+                )
+            }
+            insideContainer.setOnClickListener {
+                clickedItem.onChatClickedString(
+                    chatList[adapterPosition].chatID,
+                    userName.text.toString(),
+                    chatList[adapterPosition].usersImage[chatList[adapterPosition].userUid]!!,
+                    "direct",
+                    chatList[adapterPosition].userUid
+                )
+            }
+
+        }
+
+        private fun checkItemImage(usersImage: String) {
+            if (usersImage.startsWith("https://firebasestorage"))
+                Picasso.get().load(usersImage)
+                    .transform(CircleTransform()).into(userImage)
+            else
+                userImage.setImageResource(R.drawable.ic_default_user)
+        }
+
+
+        private fun checkUnreadMessagesNumber(unread: String) {
+            if (unread == "0")
+                unreadMessages.visibility = View.GONE
+            else {
+                unreadMessages.visibility = View.VISIBLE
+                unreadMessages.text = unread
+            }
         }
     }
 
@@ -185,3 +243,4 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
         }
     }
 }
+

@@ -39,6 +39,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="8dp"
+                android:textAlignment="viewStart"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textColor="#000"
@@ -47,7 +48,7 @@
                 app:layout_constraintEnd_toStartOf="@+id/lastMessageDate"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:text="test" />
+                tools:text="محمج" />
 
             <TextView
                 android:id="@+id/lastMessage"

@@ -45,8 +45,8 @@ class LoginActivity : AppCompatActivity() {
                     phoneEditText.requestFocus()
                     return@setOnClickListener
                 }
-                phoneButton.text = "Verify"
                 verifyNumber(phoneNumber)
+                phoneButton.text = "Verify"
             }else{
                 verifyNumberWithCode(verificationID!!, phoneEditText.text.toString())
             }

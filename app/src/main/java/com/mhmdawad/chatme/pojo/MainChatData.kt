@@ -14,5 +14,9 @@ data class MainChatData (
     val usersImage: HashMap<String, String> = HashMap(),
     var userUid: String="",
     val mediaType: String = "",
-    val lastSender:String = ""
+    val lastSender:String = "",
+    val chatType:String = "",
+    val groupName:String = "",
+    val groupImage:String = ""
+
 )

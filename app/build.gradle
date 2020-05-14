@@ -2,6 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'com.google.gms.google-services'
+apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 29
@@ -9,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "com.mhmdawad.chatme"
-        minSdkVersion 23
+        minSdkVersion 21
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
@@ -23,7 +24,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
+    dataBinding {
+        enabled = true
+    }
 }
 
 dependencies {
@@ -44,6 +47,6 @@ dependencies {
     //Picasso
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'com.github.hani-momanii:SuperNova-Emoji:1.1'
-
+    kapt 'com.android.databinding:compiler:2.3.1'
 
 }

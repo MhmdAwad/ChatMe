@@ -53,7 +53,7 @@ class ContactsAdapter(private val clickedItem: RecyclerViewClick) : RecyclerView
         }
 
         override fun onClick(v: View?) {
-            clickedItem.onItemClickedPosition(adapterPosition)
+            clickedItem.onItemClickedPosition(contactList[adapterPosition])
         }
     }
 }
