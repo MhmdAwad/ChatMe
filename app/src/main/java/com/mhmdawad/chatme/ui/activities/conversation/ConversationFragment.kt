@@ -9,17 +9,22 @@ import android.media.AudioAttributes
 import android.media.MediaRecorder
 import android.media.SoundPool
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
@@ -28,18 +33,21 @@ import com.mhmdawad.chatme.utils.CircleTransform
 import com.mhmdawad.chatme.adapters.ConversationAdapter
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.databinding.ActivityConversationBinding
+
 import com.mhmdawad.chatme.pojo.MessageData
+import com.mhmdawad.chatme.ui.activities.main_page.MainPageActivity
 import com.mhmdawad.chatme.ui.fragments.DisplayImageFragment
 import com.mhmdawad.chatme.utils.Contacts
 import com.mhmdawad.chatme.utils.RecyclerViewClick
 import com.squareup.picasso.Picasso
 import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessage,
+class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
     RecyclerViewClick {
 
     private lateinit var conversationAdapter: ConversationAdapter
@@ -51,71 +59,107 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
     private lateinit var userUid: String
     private lateinit var chatID: String
     private lateinit var binding: ActivityConversationBinding
-    private lateinit var recordFilePath: String
+//    private lateinit var recordFilePath: String
     private var send: Int? = null
     private var receive: Int? = null
     private var soundPool: SoundPool? = null
-    private lateinit var recorder: MediaRecorder
+    private var recorder: MediaRecorder? = null
+    private lateinit var fileName: String
+
+    companion object {
+        fun newInstance(
+            ChatID: String,
+            userName: String,
+            userImage: String,
+            chatType: String,
+            userUid: String
+        ): ConversationFragment {
+            val fragment = ConversationFragment()
+            val args = Bundle()
+            args.putString("ChatID", ChatID)
+            args.putString("userName", userName)
+            args.putString("userUid", userUid)
+            args.putString("userImage", userImage)
+            args.putString("chatType", chatType)
+            fragment.arguments = args
+            return fragment
+        }
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding =
+            DataBindingUtil.inflate(inflater, R.layout.activity_conversation, container, false)
+        return binding.root
+    }
 
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_conversation)
-        supportActionBar!!.hide()
-        recorder = MediaRecorder()
+    private fun clickSendMessage() {
+        binding.sendButton.setOnClickListener {
+            if (binding.messageEditText.text.isNotEmpty()) {
+                sendMessage(binding.messageEditText.text.toString(), "", "message")
+                binding.messageEditText.text.clear()
+            }
+        }
+    }
+
+    private fun changeStatusBarColors() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            activity!!.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+            activity!!.window.statusBarColor =
+                ContextCompat.getColor(activity!!, R.color.whiteColor)
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private fun clickSendMessage() {
+    private fun sendRecord() {
         var startTime: Long = 0
-        binding.sendMessageFab.setOnTouchListener { _, event ->
+        binding.recordButton.setOnTouchListener { _, event ->
 
             if (event.action == MotionEvent.ACTION_DOWN) {
                 if (binding.messageEditText.text.isEmpty()) {
                     startTime = System.nanoTime()
                     stopRecordPlayer()
                     voiceRecord()
-                    binding.emojiButton.setImageResource(R.drawable.ic_red_microphone)
+                    binding.sendButton.visibility = View.GONE
+                    userTypingStatus("recording audio..")
                 }
             } else if (event.action == MotionEvent.ACTION_UP) {
-                binding.emojiButton.setImageResource(R.drawable.ic_conversation_emoji)
                 if (binding.messageEditText.text.isEmpty()) {
+                    binding.sendButton.visibility = View.VISIBLE
                     val endTime = ((System.nanoTime() - startTime) / 1_000_000_000.0).toInt()
                     if (endTime < 1) {
                         Toast.makeText(
-                            applicationContext,
+                            activity!!.applicationContext,
                             "Hold to record, release to send",
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
-                        if (checkPermission() && this::recordFilePath.isInitialized) {
+                        if (checkPermission() ) {
                             stopRecordPlayer()
-                            addMedia(Uri.fromFile(File(recordFilePath)))
+                            addMedia(Uri.fromFile(File(fileName)))
+                            userTypingStatus("")
                         } else
                             ActivityCompat.requestPermissions(
-                                this,
+                                activity!!,
                                 arrayOf(WRITE_EXTERNAL_STORAGE, RECORD_AUDIO),
                                 100
                             )
                     }
-                } else {
-                    sendMessage(binding.messageEditText.text.toString(), "", "message")
-                    binding.messageEditText.text.clear()
                 }
-
             }
             return@setOnTouchListener true
         }
     }
 
     private fun stopRecordPlayer() {
-        if (this::recorder.isInitialized) {
+        if (recorder != null) {
             try {
-                Thread(Runnable {
-                    recorder.stop()
-                    recorder.reset()
-                    recorder.release()
-                })
+                recorder?.release()
+                recorder = null
             } catch (e: RuntimeException) {
             }
         }
@@ -131,28 +175,41 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
             .setAudioAttributes(audioAttributes)
             .build()
 
-        send = soundPool!!.load(this, R.raw.send, 1)
-        receive = soundPool!!.load(this, R.raw.receive, 1)
+        send = soundPool!!.load(activity!!, R.raw.send, 1)
+        receive = soundPool!!.load(activity!!, R.raw.receive, 1)
 
     }
 
     private fun voiceRecord() {
         if (checkPermission()) {
-            val file = File(getExternalFilesDir(null)!!.absolutePath + "/record/")
+            val file = File(activity!!.getExternalFilesDir(null), "records")
             if (!file.exists())
                 file.mkdirs()
-            recordFilePath = file.absolutePath + "/file.mp3"
-            Thread(Runnable {
-                recorder.setAudioSource(MediaRecorder.AudioSource.MIC)
-                recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                recorder.setOutputFile(recordFilePath)
-                recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                recorder.prepare()
-                recorder.start()
-            })
+
+            fileName =  "${file.absolutePath}/file.mp3"
+//            recorder.setAudioSource(MediaRecorder.AudioSource.MIC)
+//            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+//            recorder.setOutputFile(recordFilePath)
+//            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+//            recorder.prepare()
+//            recorder.start()
+
+            recorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setOutputFile(fileName)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+                try {
+                    prepare()
+                } catch (e: IOException) {
+                    Log.e("LOG_TAG", "prepare() failed")
+                }
+
+                start()
+            }
         } else {
             ActivityCompat.requestPermissions(
-                this,
+                activity!!,
                 arrayOf(WRITE_EXTERNAL_STORAGE, RECORD_AUDIO),
                 100
             )
@@ -162,28 +219,30 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
 
     private fun checkPermission(): Boolean {
         val result = checkSelfPermission(
-            applicationContext,
+            activity!!.applicationContext,
             WRITE_EXTERNAL_STORAGE
         )
         val result1 =
-            checkSelfPermission(applicationContext, RECORD_AUDIO)
+            checkSelfPermission(activity!!.applicationContext, RECORD_AUDIO)
         return result == PackageManager.PERMISSION_GRANTED &&
                 result1 == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun initBundleData() {
-        chatID = intent.extras!!.getString("ChatID")!!
-        val userName = intent.extras!!.getString("userName")!!
-        val userImage = intent.extras!!.getString("userImage")!!
-        userUid = intent.extras!!.getString("userUid", "")!!
+    private fun fragmentArguments() {
+        chatID = arguments!!.getString("ChatID")!!
+        val userName = arguments!!.getString("userName")!!
+        val userImage = arguments!!.getString("userImage")!!
+        userUid = arguments!!.getString("userUid", "")!!
         if (userImage.startsWith("https://firebasestorage"))
             Picasso.get().load(userImage).transform(CircleTransform()).into(binding.imageView)
         firebaseRef = FirebaseDatabase.getInstance().reference
         binding.userNameTxt.text = userName
+        binding.backPress.setOnClickListener { activity!!.supportFragmentManager.popBackStack() }
     }
 
     private fun changeTypingVisibility() {
-        if(binding.typingStatus.text.toString() == "")
+        Log.d("what????", binding.typingStatus.text.toString())
+        if (binding.typingStatus.text.toString() == "")
             binding.typingStatus.visibility = View.GONE
         else
             binding.typingStatus.visibility = View.VISIBLE
@@ -202,18 +261,18 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (binding.messageEditText.text.isEmpty()) {
-                    binding.sendMessageFab.setImageResource(R.drawable.ic_conversation_microphone)
                     binding.cameraButton.visibility = View.VISIBLE
+                    binding.recordButton.visibility = View.VISIBLE
                 } else {
-                    binding.sendMessageFab.setImageResource(R.drawable.ic_conversation_send)
                     binding.cameraButton.visibility = View.GONE
-                    userTypingStatus("typing..", chatID)
+                    binding.recordButton.visibility = View.GONE
+                    userTypingStatus("typing..")
                 }
             }
 
             val handler = Handler()
             var userStoppedTyping = Runnable {
-                userTypingStatus("", chatID)
+                userTypingStatus("")
             }
         })
     }
@@ -228,64 +287,52 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
                 override fun onDataChange(p0: DataSnapshot) {
                     if (p0.exists()) {
                         binding.typingStatus.text = p0.getValue(String::class.java)!!
+                        changeTypingVisibility()
                     }
                 }
             })
     }
 
     private fun iniButtons() {
-//        val emojIcon = EmojIconActions(this, binding.root, messageEditText, emojiButton)
-//        emojIcon.setUseSystemEmoji(true)
-//        messageEditText.setUseSystemDefault(true)
-//        emojIcon.setIconsIds(R.drawable.ic_keyboard, R.drawable.ic_conversation_emoji)
-//        emojIcon.ShowEmojIcon()
-//        emojiButton.setOnClickListener {
-//            emojIcon.ShowEmojIcon()
-//        }
-
         binding.cameraButton.setOnClickListener {
             chooseImage()
         }
-        //TODO
-//        rootView.paperClipButton.setOnClickListener {
-//
-//        }
     }
 
     private fun getUserTypingStatus() {
         typingChild = firebaseRef.child("Chats").child(chatID).child("Info").child("typing")
         typingListener = typingChild.addChildEventListener(object : ChildEventListener {
 
-                override fun onCancelled(p0: DatabaseError) {
-                    return
-                }
+            override fun onCancelled(p0: DatabaseError) {
+                return
+            }
 
-                override fun onChildMoved(p0: DataSnapshot, p1: String?) {
-                    return
-                }
+            override fun onChildMoved(p0: DataSnapshot, p1: String?) {
+                return
+            }
 
-                override fun onChildChanged(p0: DataSnapshot, p1: String?) {
-                    var typing = ""
-                    if (p0.key != FirebaseAuth.getInstance().uid)
-                        typing = p0.getValue(String::class.java)!!
+            override fun onChildChanged(p0: DataSnapshot, p1: String?) {
+                var typing = ""
+                if (p0.key != FirebaseAuth.getInstance().uid)
+                    typing = p0.getValue(String::class.java)!!
 
-                    if(groupUsersName.containsKey(p0.key) && typing != "")
-                        typing = "${groupUsersName[p0.key]} $typing"
+                if (groupUsersName.containsKey(p0.key) && typing != "")
+                    typing = "${groupUsersName[p0.key]} $typing"
 
-                    binding.typingStatus.text = typing
-                    changeTypingVisibility()
+                binding.typingStatus.text = typing
+                changeTypingVisibility()
 
-                    if (binding.typingStatus.text == "" && ::userUid.isInitialized)
-                        checkUserMood()
-                }
+                if (binding.typingStatus.text == "" && ::userUid.isInitialized)
+                    checkUserMood()
+            }
 
-                override fun onChildAdded(p0: DataSnapshot, p1: String?) {
-                    return
-                }
+            override fun onChildAdded(p0: DataSnapshot, p1: String?) {
+                return
+            }
 
-                override fun onChildRemoved(p0: DataSnapshot) {
-                    return
-                }
+            override fun onChildRemoved(p0: DataSnapshot) {
+                return
+            }
         })
     }
 
@@ -310,14 +357,14 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
 
     private fun displayImage(imageUri: String, hideViews: Boolean, message: String) {
         val fragment = DisplayImageFragment.newInstance(imageUri, message, hideViews, this)
-        supportFragmentManager.beginTransaction()
+        activity!!.supportFragmentManager.beginTransaction()
             .add(android.R.id.content, fragment)
             .addToBackStack(null)
             .commit()
     }
 
 
-    private fun userTypingStatus(status: String, chatID: String) {
+    private fun userTypingStatus(status: String) {
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID).child("Info")
             .child("typing").child(FirebaseAuth.getInstance().uid!!)
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -333,11 +380,11 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
 
     private fun initContactsRecyclerView() {
         conversationAdapter =
-            ConversationAdapter(this, intent.extras?.getString("chatType")!!)
+            ConversationAdapter(this, arguments?.getString("chatType")!!)
         binding.chatMessagesRV.apply {
             layoutManager =
                 LinearLayoutManager(
-                    applicationContext,
+                    activity!!.applicationContext,
                     LinearLayoutManager.VERTICAL,
                     false
                 )
@@ -364,14 +411,17 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
                     }
 
                     getUserTypingStatus()
-                    if (intent.extras?.getString("chatType") == "direct") {
+                    if (arguments?.getString("chatType") == "direct") {
                         seenMessages()
                         getUnseenMessages(chatID)
-                    }else
-                        for(phones in p0.child("Info").child("usersPhone").children)
-                            groupUsersName[phones.key!!] = (Contacts.getContactName(phones.getValue(String::class.java)!!,applicationContext))
+                    } else
+                        for (phones in p0.child("Info").child("usersPhone").children)
+                            groupUsersName[phones.key!!] = (Contacts.getContactName(
+                                phones.getValue(String::class.java)!!,
+                                activity!!.applicationContext
+                            ))
 
-                    val usersImages = HashMap<String,String>()
+                    val usersImages = HashMap<String, String>()
                     for (images in p0.child("Info").child("usersImage").children)
                         usersImages[images.key!!] = images.getValue(String::class.java)!!
 
@@ -385,7 +435,7 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
     }
 
     private fun deleteListeners() {
-//        typingChild.removeEventListener(typingListener)
+        typingChild.removeEventListener(typingListener)
         fetchMessagesChild.removeEventListener(fetchMessagesListener)
     }
 
@@ -397,12 +447,16 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
     override fun onStart() {
         super.onStart()
         playSound()
-        initBundleData()
+        fragmentArguments()
         iniButtons()
+        changeStatusBarColors()
         initContactsRecyclerView()
         editTextChanged()
+        sendRecord()
         clickSendMessage()
-        binding.linearLayout.setOnClickListener { onBackPressed() }
+        if(userUid != "")
+            checkUserMood()
+        binding.linearLayout.setOnClickListener { activity!!.supportFragmentManager.popBackStack() }
     }
 
     override fun onResume() {
@@ -412,6 +466,7 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
 
 
     private fun sendMessage(message: String, media: String, type: String) {
+
         val key = FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
             .child("messages").push().key!!
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
@@ -426,46 +481,29 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
             ).addOnSuccessListener {
                 soundPool!!.play(send!!, 1f, 1f, 0, 0, 1f)
             }
-
-        if(intent.extras?.getString("chatType") == "direct")
-            incrementUnreadValue(chatID, message, type)
+        val chatType = arguments?.getString("chatType")
+        addLastMessageData(message,type, chatType!!)
+        if (chatType == "direct")
+            incrementUnreadValue()
     }
 
-    private fun addMedia(media: Uri) {
+    private fun addMedia(mediaPath: Uri) {
         val fileName = "media/ ${UUID.randomUUID()}"
         val filepath = FirebaseStorage.getInstance().reference.child(fileName)
-        filepath.putFile(media).addOnSuccessListener {
+        filepath.putFile(mediaPath).addOnSuccessListener {
             filepath.downloadUrl.addOnSuccessListener {
-                Toast.makeText(applicationContext, "Record Sent", Toast.LENGTH_SHORT)
+                Toast.makeText(activity!!.applicationContext, "Record Sent", Toast.LENGTH_SHORT)
                     .show()
                 sendMessage("", it.toString(), "Voice Record")
             }
         }.addOnFailureListener {
             Toast.makeText(
-                applicationContext,
+                activity!!.applicationContext,
                 "Error with upload the image",
                 Toast.LENGTH_SHORT
             ).show()
         }
     }
-
-//    private fun getChatUsersUid() {
-//        FirebaseDatabase.getInstance().reference.child("Users")
-//            .child(FirebaseAuth.getInstance().uid!!).child("chat")
-//            .addValueEventListener(object : ValueEventListener {
-//                override fun onCancelled(p0: DatabaseError) {}
-//
-//                override fun onDataChange(p0: DataSnapshot) {
-//                        for (data in p0.children) {
-//                            Log.d("userUid","${data.key!!}  ${data.getValue(String::class.java)}")
-//                            if (data.getValue(String::class.java) == chatID) {
-//                                userUid = data.key!!
-//                                checkUserMood()
-//                            }
-//                        }
-//                }
-//            })
-//    }
 
     private fun seenMessages() {
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
@@ -497,7 +535,19 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
             })
     }
 
-    private fun incrementUnreadValue(chatID: String, message: String, mediaType: String) {
+    private fun addLastMessageData(message: String, mediaType: String, chatType: String){
+        val firebaseRef = FirebaseDatabase.getInstance().reference.child("Chats").child(chatID).child("Info")
+        firebaseRef.ref.child("mediaType").setValue(mediaType)
+        firebaseRef.ref.child("chatType").setValue(chatType)
+        firebaseRef.ref.child("lastSender").setValue(FirebaseAuth.getInstance().uid!!)
+        firebaseRef.ref.child("chatID").setValue(chatID)
+        if (message == "") firebaseRef.ref.child("lastMessage").setValue(mediaType)
+        else firebaseRef.ref.child("lastMessage").setValue(message)
+        firebaseRef.ref.child("lastMessageDate").setValue(
+            SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Date())
+        )
+    }
+    private fun incrementUnreadValue() {
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
             .child("Info").addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}
@@ -513,15 +563,6 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
                         p0.ref.child("unreadMessage").child(userUid)
                             .setValue((++num).toString())
                     }
-                    p0.ref.child("mediaType").setValue(mediaType)
-                    p0.ref.child("chatType").setValue("direct")
-                    p0.ref.child("lastSender").setValue(FirebaseAuth.getInstance().uid!!)
-                    p0.ref.child("chatID").setValue(chatID)
-                    if (message == "") p0.ref.child("lastMessage").setValue(mediaType)
-                    else p0.ref.child("lastMessage").setValue(message)
-                    p0.ref.child("lastMessageDate").setValue(
-                        SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Date())
-                    )
                     p0.ref.child("unreadMessage").child(FirebaseAuth.getInstance().uid!!)
                         .setValue("0")
                 }
@@ -529,18 +570,6 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
 
     }
 
-
-    override fun onBackPressed() {
-        val fragments = supportFragmentManager.fragments
-        for (fragment in fragments) {
-            if (fragment is DisplayImageFragment) {
-                fragment.onBackPressed()
-                return
-            }
-        }
-        supportActionBar!!.show()
-        super.onBackPressed()
-    }
 
     // userName -> Message
     override fun openUserImage(userImage: String, userName: String) {
@@ -554,4 +583,5 @@ class ConversationActivity : AppCompatActivity(), DisplayImageFragment.NewMessag
     override fun receivedNewMessage() {
         soundPool!!.play(receive!!, 1f, 1f, 0, 0, 1f)
     }
+
 }

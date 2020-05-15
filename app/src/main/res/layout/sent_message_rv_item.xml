@@ -22,40 +22,30 @@
             android:id="@+id/groupUserName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textStyle="bold"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
+            android:textStyle="bold"
             android:visibility="gone"
-            tools:text="userName"/>
+            tools:text="userName" />
+
         <LinearLayout
             android:id="@+id/recordContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="4dp"
-            android:visibility="gone"
             android:gravity="center"
             android:minWidth="200dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:visibility="gone">
 
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <ImageView
+                android:id="@+id/recordImage"
                 android:layout_width="40dp"
-                android:layout_height="40dp">
-                <ImageView
-                    android:id="@+id/recordImage"
-                    android:src="@drawable/ic_default_user"
-                    android:background="@drawable/circle_white_shape"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+                android:layout_height="40dp"
+                android:background="@drawable/circle_white_shape"
+                android:src="@drawable/ic_default_user" />
 
-                <ImageView
-                    android:id="@+id/recordMicImage"
-                    android:layout_width="15dp"
-                    android:layout_height="15dp"
-                    android:src="@drawable/ic_conversation_microphone"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
             <ImageButton
                 android:id="@+id/recordPlay"
                 android:layout_width="wrap_content"
@@ -64,11 +54,17 @@
                 android:background="@null"
                 android:src="@drawable/ic_play_record" />
 
-            <SeekBar
+            <com.masoudss.lib.WaveformSeekBar
                 android:id="@+id/recordSeekbar"
                 android:layout_width="140dp"
-                android:layout_height="wrap_content"
-                />
+                android:layout_height="30dp"
+                app:wave_background_color="#565C62"
+                app:wave_corner_radius="2dp"
+                app:wave_gap="2dp"
+                app:wave_gravity="center"
+                app:wave_min_height="5dp"
+                app:wave_progress="0"
+                app:wave_width="5dp" />
 
         </LinearLayout>
 
@@ -92,7 +88,7 @@
             android:layout_marginTop="4dp"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="4dp"
-            android:textColor="#000"
+            android:textColor="#101013"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -123,8 +119,8 @@
                 android:id="@+id/messageSeen"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:src="@drawable/ic_done"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_conversation_seen_message" />
         </LinearLayout>
     </LinearLayout>
 

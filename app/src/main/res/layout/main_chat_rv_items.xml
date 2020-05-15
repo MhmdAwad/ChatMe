@@ -15,68 +15,65 @@
             android:id="@+id/includeLayout"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:elevation="5dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/constraintLayout"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/includeLayout"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <TextView
-                android:id="@+id/userName"
+            <RelativeLayout
+                android:id="@+id/upperLayout"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:textAlignment="viewStart"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="#000"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toStartOf="@+id/lastMessageDate"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:text="محمج" />
+                android:layout_height="0dp"
+                android:layout_margin="8dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/includeLayout"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <TextView
+                    android:id="@+id/userName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:layout_marginTop="8dp"
+                    android:layout_toStartOf="@id/lastMessageDate"
+                    android:layout_alignParentStart="true"
+                    android:textAlignment="viewStart"
+                    android:textColor="#101013"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="مasdasdasdasdsssssssssssssssssssssssssssssssssssssssssssssssssssحمج" />
+
+                <TextView
+                    android:id="@+id/lastMessageDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginTop="8dp"
+                    android:gravity="end"
+                    android:layout_alignParentEnd="true"
+                    android:textColor="@color/lightColor"
+                    tools:text="5:22 AM" />
+
 
             <TextView
                 android:id="@+id/lastMessage"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textAlignment="viewStart"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/unreadMessages"
-                app:layout_constraintStart_toEndOf="@+id/lastImageView"
-                app:layout_constraintTop_toBottomOf="@+id/userName"
-                tools:text="محمد عوض" />
-
-            <TextView
-                android:id="@+id/lastMessageDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
                 android:ellipsize="end"
-                android:gravity="center"
                 android:maxLines="1"
-                android:textColor="@color/lightColor"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:text="5:22 AM" />
+                android:layout_marginTop="8dp"
+                android:layout_toEndOf="@id/lastImageView"
+                android:layout_below="@id/lastMessageDate"
+                android:textColor="#808080"
+                android:textAlignment="viewStart"
+                android:text="محمد عوض" />
+
 
             <TextView
                 android:id="@+id/unreadMessages"
@@ -85,36 +82,33 @@
                 android:background="@drawable/circle_shape"
                 android:ellipsize="end"
                 android:gravity="center"
+                android:layout_margin="8dp"
                 android:maxLines="1"
+                android:layout_alignParentEnd="true"
+                android:layout_below="@id/lastMessageDate"
                 android:textColor="#FFFF"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="@+id/lastMessageDate"
-                app:layout_constraintHorizontal_bias="1.0"
-                app:layout_constraintStart_toStartOf="@+id/lastMessageDate"
                 tools:text="5" />
 
             <ImageView
                 android:id="@+id/seenImageView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="11dp"
                 android:layout_marginStart="8dp"
                 android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/userName"
+                android:layout_alignParentStart="true"
+                android:layout_below="@id/userName"
                 app:srcCompat="@drawable/ic_conversation_sent_message" />
 
             <ImageView
                 android:id="@+id/lastImageView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/seenImageView"
-                app:layout_constraintTop_toBottomOf="@+id/userName"
+                android:layout_marginTop="6dp"
+                android:layout_toEndOf="@id/seenImageView"
+                android:layout_below="@id/userName"
                 app:srcCompat="@drawable/ic_main_page_image" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
+            </RelativeLayout>
         <View
             android:id="@+id/viewLine"
             android:layout_width="0dp"

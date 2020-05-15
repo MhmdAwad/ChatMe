@@ -1,14 +1,20 @@
 package com.mhmdawad.chatme.adapters
 
+import android.app.Activity
+import android.content.Context
 import android.graphics.Color
 import android.media.MediaPlayer
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
+import com.masoudss.lib.WaveformSeekBar
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.pojo.MessageData
 import com.mhmdawad.chatme.utils.CircleTransform
@@ -17,6 +23,7 @@ import com.squareup.picasso.Picasso
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.logging.Handler
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -108,8 +115,7 @@ class ConversationAdapter(
         private val recordContainer: LinearLayout = itemView.findViewById(R.id.recordContainer)
         private val recordImage: ImageView = itemView.findViewById(R.id.recordImage)
         private val recordPlay: ImageButton = itemView.findViewById(R.id.recordPlay)
-        private val recordSeekBar: SeekBar = itemView.findViewById(R.id.recordSeekbar)
-        private val recordMicImage: ImageView = itemView.findViewById(R.id.recordMicImage)
+        private val recordSeekBar: WaveformSeekBar = itemView.findViewById(R.id.recordSeekbar)
         private val groupUserName: TextView = itemView.findViewById(R.id.groupUserName)
 
         init {
@@ -143,9 +149,7 @@ class ConversationAdapter(
                     Picasso.get().load(user.mediaPath).into(imageBody)
                 }
             }
-
-
-
+            recordSeekBar.sample = intArrayOf(1,3,4,3,2,5,6,7,5,8,5,8,3,8,3,0,2,5,6)
             if (user.message == "")
                 messageBody.visibility = View.GONE
             else {
@@ -163,9 +167,6 @@ class ConversationAdapter(
         }
 
         private fun bindGroupChat(user: MessageData) {
-            recordSeekBar.progressDrawable.setTint(Color.parseColor("#808080"))
-            recordSeekBar.thumb.setTint(Color.parseColor("#808080"))
-            recordMicImage.setImageResource(R.drawable.gray_microphone)
             if (user.senderUid != FirebaseAuth.getInstance().uid) {
                 groupUserName.visibility = View.VISIBLE
                 groupUserName.text = usersNames[user.senderUid]
@@ -183,16 +184,10 @@ class ConversationAdapter(
         }
 
         private fun bindSent() {
-            recordSeekBar.progressDrawable.setTint(Color.parseColor("#25D366"))
-            recordSeekBar.thumb.setTint(Color.parseColor("#25D366"))
-            recordMicImage.setImageResource(R.drawable.sent_record)
             messageSeen.setImageResource(R.drawable.ic_done)
         }
 
         private fun bindSeen() {
-            recordSeekBar.progressDrawable.setTint(Color.parseColor("#00BCD4"))
-            recordSeekBar.thumb.setTint(Color.parseColor("#00BCD4"))
-            recordMicImage.setImageResource(R.drawable.seen_record)
             messageSeen.setImageResource(R.drawable.ic_conversation_seen_message)
         }
 
@@ -209,14 +204,14 @@ class ConversationAdapter(
     }
 
 
-    private fun playRecord(voiceLink: String, seekBar: SeekBar, recordPlay: ImageButton) {
+    private fun playRecord(voiceLink: String, seekBar: WaveformSeekBar, recordPlay: ImageButton) {
+        Log.d("play", "playing")
         mediaPlayer = MediaPlayer()
         try {
             mediaPlayer?.setDataSource(voiceLink)
             mediaPlayer?.prepareAsync()
             mediaPlayer?.setOnPreparedListener {
                 mediaPlayer?.start()
-                seekBar.max = it.duration
                 recordPlay.setImageResource(R.drawable.ic_pause_record)
                 Log.d("Duration", "${it.duration}")
             }
@@ -228,22 +223,10 @@ class ConversationAdapter(
             mediaPlayer?.reset()
             recordPlay.setImageResource(R.drawable.ic_play_record)
         }
-        seekBarDuration(seekBar)
     }
 
 
-    private fun seekBarDuration(
-        seekBar: SeekBar
-    ) {
-        timer = Timer()
-        timer!!.scheduleAtFixedRate(object : TimerTask() {
-            override fun run() {
-                seekBar.progress = mediaPlayer!!.currentPosition
-            }
-        }, 0, 100)
-    }
-
-    private fun closeTimer(seekBar: SeekBar) {
+    private fun closeTimer(seekBar: WaveformSeekBar) {
         if (timer != null) {
             timer!!.cancel()
             seekBar.progress = 0

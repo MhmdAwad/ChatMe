@@ -20,16 +20,16 @@ import com.mhmdawad.chatme.adapters.ContactsAdapter
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.pojo.MainChatData
 import com.mhmdawad.chatme.pojo.UserData
-import com.mhmdawad.chatme.ui.activities.conversation.ConversationActivity
-import com.mhmdawad.chatme.ui.activities.main_page.MainPageActivity
+import com.mhmdawad.chatme.ui.activities.conversation.ConversationFragment
 import com.mhmdawad.chatme.ui.fragments.create_group.CreateGroupFragment
 import com.mhmdawad.chatme.utils.CountryISO
 import com.mhmdawad.chatme.utils.RecyclerViewClick
+import kotlinx.android.synthetic.main.activity_conversation.view.*
 import kotlinx.android.synthetic.main.fragment_contacts.view.*
 import kotlinx.android.synthetic.main.include_toolbar.view.*
 
 
-class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackButtonPressed {
+class ContactsFragment : Fragment(), RecyclerViewClick {
 
     private lateinit var contactsAdapter: ContactsAdapter
     private lateinit var usersList: ArrayList<UserData>
@@ -42,7 +42,6 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
         savedInstanceState: Bundle?
     ): View? {
         rootView = inflater.inflate(R.layout.fragment_contacts, container, false)
-        (activity as AppCompatActivity).supportActionBar!!.hide()
         initViews()
         initContactsRecyclerView()
         getContactsList()
@@ -51,7 +50,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
     }
 
     private fun initViews() {
-        rootView.toolbarBackPress.setOnClickListener { onBackPressed() }
+        rootView.logoutButton.setOnClickListener { activity!!.supportFragmentManager.popBackStack() }
         rootView.toolbarName.text = "Contacts"
     }
 
@@ -249,7 +248,7 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
     }
 
     private fun startConversationActivity(key: String, name: String, image: String, uid: String) {
-        val intent = Intent(activity!!.applicationContext, ConversationActivity::class.java)
+        val intent = Intent(activity!!.applicationContext, ConversationFragment::class.java)
         intent.putExtra("ChatID", key)
         intent.putExtra("userName", name)
         intent.putExtra("userImage", image)
@@ -257,15 +256,15 @@ class ContactsFragment : Fragment(), RecyclerViewClick, MainPageActivity.OnBackB
         intent.putExtra("userUid", uid)
 
         startActivity(intent)
-        onBackPressed()
+//        onBackPressed()
     }
 
     override fun onItemClickedPosition(data: UserData) {
         checkConversationStatus(data)
     }
 
-    override fun onBackPressed() {
-        activity!!.supportFragmentManager.popBackStack()
-        (activity as AppCompatActivity).supportActionBar!!.show()
-    }
+//    override fun onBackPressed() {
+//        activity!!.supportFragmentManager.popBackStack()
+//        (activity as AppCompatActivity).supportActionBar!!.show()
+//    }
 }

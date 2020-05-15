@@ -1,6 +1,7 @@
 package com.mhmdawad.chatme.adapters
 
 import android.graphics.Color
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -54,7 +55,7 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
         private var lastImageView: ImageView = itemView.findViewById(R.id.lastImageView)
         private val viewLine: View = itemView.findViewById(R.id.viewLine)
         private val container: ConstraintLayout = itemView.findViewById(R.id.container)
-        private val insideContainer: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
+        private val insideContainer: RelativeLayout = itemView.findViewById(R.id.upperLayout)
 
 
         fun bind(user: MainChatData) {
@@ -87,18 +88,18 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
                 if (adapterPosition == chatList.size - 1) View.GONE else View.VISIBLE
 
 
+            Log.d("TTTT", user.lastMessage)
             lastMessage.text = user.lastMessage
             lastMessageDate.text = getDateFormat(user.lastMessageDate)
             if(user.chatType == "direct") bindDirect(user)
             else if(user.chatType == "group") bindGroups(user)
-
             clickViews()
-
         }
         private fun bindDirect(user: MainChatData){
             checkItemImage(user.usersImage[chatList[adapterPosition].userUid]!!)
             userName.text = chatList[adapterPosition].offlineUserName
             userImage.setBackgroundResource(R.drawable.circle_white_shape)
+            userImage.setPadding(0,0,0,0)
         }
 
         private fun bindGroups(user: MainChatData) {
@@ -119,7 +120,7 @@ class MainChatAdapter(private val clickedItem: RecyclerViewClick) :
         ) {
             if (unreadCount != 0) {
                 seenImageView.setImageResource(R.drawable.ic_conversation_seen_message)
-                lastMessageDate.setTextColor(Color.parseColor("#25D366"))
+                lastMessageDate.setTextColor(Color.parseColor("#57DDCE"))
                 if (mediaType == "Voice Record")
                     lastImageView.setImageResource(R.drawable.seen_record)
                 else

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/menuSettings"
+        android:title="Settings"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_account_setting"/>
+    <item
+        android:id="@+id/menuSarahah"
+        android:title="Status"
+        app:showAsAction="always"
+        android:icon="@drawable/bar_sarahah"/>
+
+    <item
+        android:id="@+id/menuStatus"
+        android:title="Status"
+        app:showAsAction="always"
+        android:icon="@drawable/bar_stories"/>
+
+</menu>
