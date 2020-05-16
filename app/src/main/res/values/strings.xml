@@ -2,4 +2,12 @@
     <string name="app_name">ChatMe</string>
 
     <!-- TODO: Remove or change this placeholder text -->
+    <string name="signInMsg">Sign in to continue \n to <font color = "#57DDCE" size = "24" > ChatMe</font></string>
+    <string name="welcome">Welcome Back!</string>
+    <string name="log_out_profile">log out Profile</string>
+    <string name="chats">Chats</string>
+    <string name="user_profile_image">userProfileImage</string>
+    <string name="seen_image">seen Message</string>
+    <string name="media_icon">media icon</string>
+    <string name="search">Search</string>
 </resources>

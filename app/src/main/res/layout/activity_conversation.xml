@@ -7,7 +7,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/whiteColor"
-        tools:context=".ui.activities.conversation.ConversationFragment">
+        tools:context=".ui.fragments.conversation.ConversationFragment">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/chatMessagesRV"

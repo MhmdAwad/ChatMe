@@ -8,7 +8,6 @@ import android.telephony.TelephonyManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
@@ -16,15 +15,13 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.mhmdawad.chatme.adapters.ContactsAdapter
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.pojo.MainChatData
 import com.mhmdawad.chatme.pojo.UserData
-import com.mhmdawad.chatme.ui.activities.conversation.ConversationFragment
+import com.mhmdawad.chatme.ui.fragments.conversation.ConversationFragment
 import com.mhmdawad.chatme.ui.fragments.create_group.CreateGroupFragment
 import com.mhmdawad.chatme.utils.CountryISO
 import com.mhmdawad.chatme.utils.RecyclerViewClick
-import kotlinx.android.synthetic.main.activity_conversation.view.*
 import kotlinx.android.synthetic.main.fragment_contacts.view.*
 import kotlinx.android.synthetic.main.include_toolbar.view.*
 
@@ -65,7 +62,8 @@ class ContactsFragment : Fragment(), RecyclerViewClick {
         }
     }
     private fun initContactsRecyclerView() {
-        contactsAdapter = ContactsAdapter(this)
+        contactsAdapter =
+            ContactsAdapter(this)
         rootView.contactsRV.apply {
             layoutManager =
                 LinearLayoutManager(
@@ -246,25 +244,19 @@ class ContactsFragment : Fragment(), RecyclerViewClick {
                 }
             })
     }
-
     private fun startConversationActivity(key: String, name: String, image: String, uid: String) {
-        val intent = Intent(activity!!.applicationContext, ConversationFragment::class.java)
-        intent.putExtra("ChatID", key)
-        intent.putExtra("userName", name)
-        intent.putExtra("userImage", image)
-        intent.putExtra("chatType", "direct")
-        intent.putExtra("userUid", uid)
+        val conversationFragment =
+            ConversationFragment.newInstance(key, name, image, "direct", uid)
+            activity!!.supportFragmentManager.beginTransaction()
+                .add(android.R.id.content, conversationFragment)
+                .addToBackStack(null)
+                .commit()
 
-        startActivity(intent)
-//        onBackPressed()
+//        activity!!.supportFragmentManager.popBackStack()
     }
+
 
     override fun onItemClickedPosition(data: UserData) {
         checkConversationStatus(data)
     }
-
-//    override fun onBackPressed() {
-//        activity!!.supportFragmentManager.popBackStack()
-//        (activity as AppCompatActivity).supportActionBar!!.show()
-//    }
 }

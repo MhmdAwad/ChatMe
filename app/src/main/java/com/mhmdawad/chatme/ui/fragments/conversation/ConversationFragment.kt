@@ -1,4 +1,4 @@
-package com.mhmdawad.chatme.ui.activities.conversation
+package com.mhmdawad.chatme.ui.fragments.conversation
 
 import android.Manifest.permission.*
 import android.annotation.SuppressLint
@@ -30,12 +30,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
 import com.mhmdawad.chatme.utils.CircleTransform
-import com.mhmdawad.chatme.adapters.ConversationAdapter
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.databinding.ActivityConversationBinding
 
 import com.mhmdawad.chatme.pojo.MessageData
-import com.mhmdawad.chatme.ui.activities.main_page.MainPageActivity
 import com.mhmdawad.chatme.ui.fragments.DisplayImageFragment
 import com.mhmdawad.chatme.utils.Contacts
 import com.mhmdawad.chatme.utils.RecyclerViewClick
@@ -53,13 +51,13 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
     private lateinit var conversationAdapter: ConversationAdapter
     private lateinit var firebaseRef: DatabaseReference
     private lateinit var typingListener: ChildEventListener
-    private lateinit var fetchMessagesListener: ValueEventListener
+    private lateinit var fetchMessagesListener: ChildEventListener
     private lateinit var typingChild: DatabaseReference
     private lateinit var fetchMessagesChild: DatabaseReference
     private lateinit var userUid: String
     private lateinit var chatID: String
     private lateinit var binding: ActivityConversationBinding
-//    private lateinit var recordFilePath: String
+    //    private lateinit var recordFilePath: String
     private var send: Int? = null
     private var receive: Int? = null
     private var soundPool: SoundPool? = null
@@ -138,7 +136,7 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
-                        if (checkPermission() ) {
+                        if (checkPermission()) {
                             stopRecordPlayer()
                             addMedia(Uri.fromFile(File(fileName)))
                             userTypingStatus("")
@@ -186,26 +184,21 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
             if (!file.exists())
                 file.mkdirs()
 
-            fileName =  "${file.absolutePath}/file.mp3"
-//            recorder.setAudioSource(MediaRecorder.AudioSource.MIC)
-//            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-//            recorder.setOutputFile(recordFilePath)
-//            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-//            recorder.prepare()
-//            recorder.start()
+            fileName = "${file.absolutePath}/file.mp3"
 
             recorder = MediaRecorder().apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setOutputFile(fileName)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-                try {
-                    prepare()
-                } catch (e: IOException) {
-                    Log.e("LOG_TAG", "prepare() failed")
+                Thread {
+                    try {
+                        prepare()
+                    } catch (e: IOException) {
+                        Log.e("LOG_TAG", "prepare() failed")
+                    }
+                    start()
                 }
-
-                start()
             }
         } else {
             ActivityCompat.requestPermissions(
@@ -252,7 +245,7 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
         binding.messageEditText.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 handler.removeCallbacksAndMessages(null)
-                handler.postDelayed(userStoppedTyping, 400)
+                handler.postDelayed(userStoppedTyping, 500)
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -272,6 +265,7 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
 
             val handler = Handler()
             var userStoppedTyping = Runnable {
+                Log.d("FFFF","asfasfasfasfas")
                 userTypingStatus("")
             }
         })
@@ -300,7 +294,8 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
     }
 
     private fun getUserTypingStatus() {
-        typingChild = firebaseRef.child("Chats").child(chatID).child("Info").child("typing")
+        typingChild =
+            firebaseRef.child("Chats").child(chatID).child("Info").child("typing").child(userUid)
         typingListener = typingChild.addChildEventListener(object : ChildEventListener {
 
             override fun onCancelled(p0: DatabaseError) {
@@ -380,7 +375,10 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
 
     private fun initContactsRecyclerView() {
         conversationAdapter =
-            ConversationAdapter(this, arguments?.getString("chatType")!!)
+            ConversationAdapter(
+                this,
+                arguments?.getString("chatType")!!
+            )
         binding.chatMessagesRV.apply {
             layoutManager =
                 LinearLayoutManager(
@@ -394,11 +392,35 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
 
     private val groupUsersName = HashMap<String, String>()
 
+    private fun newMessages() {
+        fetchMessagesChild = firebaseRef.child("Chats").child(chatID).child("messages")
+        fetchMessagesListener =
+            fetchMessagesChild.addChildEventListener(object : ChildEventListener {
+                override fun onCancelled(p0: DatabaseError) {
+                }
+
+                override fun onChildMoved(p0: DataSnapshot, p1: String?) {
+                }
+
+                override fun onChildChanged(p0: DataSnapshot, p1: String?) {
+
+                }
+
+                override fun onChildAdded(p0: DataSnapshot, p1: String?) {
+                    conversationAdapter.addMessage(arrayListOf(p0.getValue(MessageData::class.java)!!))
+                    Log.d("onChildChanged", p0.getValue(MessageData::class.java).toString())
+                    binding.chatMessagesRV.scrollToPosition(conversationAdapter.itemCount - 1)
+                }
+
+                override fun onChildRemoved(p0: DataSnapshot) {
+                }
+            })
+    }
+
     private fun fetchMessages() {
         val chatList: ArrayList<MessageData> = ArrayList()
-        fetchMessagesChild = firebaseRef.child("Chats").child(chatID)
-        fetchMessagesListener =
-            fetchMessagesChild.addValueEventListener(object : ValueEventListener {
+        firebaseRef.child("Chats").child(chatID)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onCancelled(p0: DatabaseError) {}
 
                 override fun onDataChange(p0: DataSnapshot) {
@@ -430,6 +452,7 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
                     conversationAdapter.addUsersName(groupUsersName)
                     conversationAdapter.addMessage(chatList)
                     binding.chatMessagesRV.scrollToPosition(chatList.size - 1)
+                    newMessages()
                 }
             })
     }
@@ -454,7 +477,7 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
         editTextChanged()
         sendRecord()
         clickSendMessage()
-        if(userUid != "")
+        if (userUid != "")
             checkUserMood()
         binding.linearLayout.setOnClickListener { activity!!.supportFragmentManager.popBackStack() }
     }
@@ -482,7 +505,7 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
                 soundPool!!.play(send!!, 1f, 1f, 0, 0, 1f)
             }
         val chatType = arguments?.getString("chatType")
-        addLastMessageData(message,type, chatType!!)
+        addLastMessageData(message, type, chatType!!)
         if (chatType == "direct")
             incrementUnreadValue()
     }
@@ -535,8 +558,9 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
             })
     }
 
-    private fun addLastMessageData(message: String, mediaType: String, chatType: String){
-        val firebaseRef = FirebaseDatabase.getInstance().reference.child("Chats").child(chatID).child("Info")
+    private fun addLastMessageData(message: String, mediaType: String, chatType: String) {
+        val firebaseRef =
+            FirebaseDatabase.getInstance().reference.child("Chats").child(chatID).child("Info")
         firebaseRef.ref.child("mediaType").setValue(mediaType)
         firebaseRef.ref.child("chatType").setValue(chatType)
         firebaseRef.ref.child("lastSender").setValue(FirebaseAuth.getInstance().uid!!)
@@ -547,6 +571,7 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
             SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Date())
         )
     }
+
     private fun incrementUnreadValue() {
         FirebaseDatabase.getInstance().reference.child("Chats").child(chatID)
             .child("Info").addListenerForSingleValueEvent(object : ValueEventListener {
@@ -572,8 +597,8 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
 
 
     // userName -> Message
-    override fun openUserImage(userImage: String, userName: String) {
-        displayImage(userImage, true, userName)
+    override fun openUserImage(userImage: String, message: String) {
+        displayImage(userImage, true, message)
     }
 
     override fun createMediaMessage(message: String, mediaPath: String) {

@@ -15,9 +15,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
-        <activity android:name="com.mhmdawad.chatme.ui.activities.main_page.MainPageActivity"
-            android:theme="@style/NoActionbarAppTheme"/>
+        android:theme="@style/NoActionbarAppTheme">
+        <activity android:name="com.mhmdawad.chatme.ui.activities.main_page.MainPageActivity"/>
         <activity android:name="com.mhmdawad.chatme.ui.activities.splash.SplashActivity" />
         <activity android:name="com.mhmdawad.chatme.ui.activities.login.LoginActivity">
             <intent-filter>

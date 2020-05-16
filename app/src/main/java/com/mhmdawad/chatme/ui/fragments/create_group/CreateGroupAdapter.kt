@@ -1,4 +1,4 @@
-package com.mhmdawad.chatme.adapters
+package com.mhmdawad.chatme.ui.fragments.create_group
 
 import android.util.Log
 import android.view.LayoutInflater

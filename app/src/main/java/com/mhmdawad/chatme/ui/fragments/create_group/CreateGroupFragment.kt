@@ -19,10 +19,9 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 import com.mhmdawad.chatme.R
-import com.mhmdawad.chatme.adapters.CreateGroupAdapter
 import com.mhmdawad.chatme.pojo.MainChatData
 import com.mhmdawad.chatme.pojo.UserData
-import com.mhmdawad.chatme.ui.activities.conversation.ConversationFragment
+import com.mhmdawad.chatme.ui.fragments.conversation.ConversationFragment
 import com.mhmdawad.chatme.utils.RecyclerViewClick
 import kotlinx.android.synthetic.main.fragment_create_group.view.*
 
@@ -48,7 +47,8 @@ class CreateGroupFragment : Fragment(), RecyclerViewClick {
     }
 
     private fun initRecyclerView() {
-        val contactsAdapter = CreateGroupAdapter()
+        val contactsAdapter =
+            CreateGroupAdapter()
         rootView.groupRV.apply {
             layoutManager =
                 LinearLayoutManager(

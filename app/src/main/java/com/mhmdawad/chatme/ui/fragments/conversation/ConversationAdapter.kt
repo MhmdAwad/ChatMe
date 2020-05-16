@@ -1,7 +1,5 @@
-package com.mhmdawad.chatme.adapters
+package com.mhmdawad.chatme.ui.fragments.conversation
 
-import android.app.Activity
-import android.content.Context
 import android.graphics.Color
 import android.media.MediaPlayer
 import android.util.Log
@@ -23,7 +21,6 @@ import com.squareup.picasso.Picasso
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.logging.Handler
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -40,11 +37,8 @@ class ConversationAdapter(
     }
 
     private var unseenNumber: Int = 0
-    private var myImage: String = ""
-    private var userImage: String = ""
     private val conversationList: ArrayList<MessageData> = ArrayList()
     private var mediaPlayer: MediaPlayer? = null
-    private var timer: Timer? = null
     private var lastMessagesSize = 0
     private val userNameColors = HashMap<String, Int>()
 
@@ -82,7 +76,6 @@ class ConversationAdapter(
         holder.bind(conversationList[position])
 
     fun addMessage(message: ArrayList<MessageData>) {
-        conversationList.clear()
         conversationList.addAll(message)
         conversationList.sortedBy { it.date }
         if (lastMessagesSize < message.size && message[message.size - 1].senderUid != FirebaseAuth.getInstance().uid)
@@ -121,8 +114,7 @@ class ConversationAdapter(
         init {
             itemView.setOnClickListener(this)
             recordPlay.setOnClickListener {
-                closeTimer(recordSeekBar)
-                playRecord(conversationList[adapterPosition].mediaPath, recordSeekBar, recordPlay)
+                playRecord(conversationList[adapterPosition].mediaPath, recordPlay)
             }
         }
 
@@ -149,7 +141,7 @@ class ConversationAdapter(
                     Picasso.get().load(user.mediaPath).into(imageBody)
                 }
             }
-            recordSeekBar.sample = intArrayOf(1,3,4,3,2,5,6,7,5,8,5,8,3,8,3,0,2,5,6)
+            recordSeekBar.sample = intArrayOf(1,3,4,3,1,8,1,2,9,2,5,8,5,8,3,8,3,0,9,5,6,2)
             if (user.message == "")
                 messageBody.visibility = View.GONE
             else {
@@ -158,15 +150,17 @@ class ConversationAdapter(
             }
             messageDate.text = getDateFormat(user.date)
 
-            if (chatType == "direct")
+            if (chatType == "direct") {
                 bindDirectChat()
-            else if (chatType == "group")
+                return
+            } else if (chatType == "group")
                 bindGroupChat(user)
 
 
         }
 
         private fun bindGroupChat(user: MessageData) {
+            bindSent()
             if (user.senderUid != FirebaseAuth.getInstance().uid) {
                 groupUserName.visibility = View.VISIBLE
                 groupUserName.text = usersNames[user.senderUid]
@@ -204,8 +198,7 @@ class ConversationAdapter(
     }
 
 
-    private fun playRecord(voiceLink: String, seekBar: WaveformSeekBar, recordPlay: ImageButton) {
-        Log.d("play", "playing")
+    private fun playRecord(voiceLink: String, recordPlay: ImageButton) {
         mediaPlayer = MediaPlayer()
         try {
             mediaPlayer?.setDataSource(voiceLink)
@@ -219,17 +212,8 @@ class ConversationAdapter(
             Log.d("error", "$e")
         }
         mediaPlayer?.setOnCompletionListener {
-            closeTimer(seekBar)
             mediaPlayer?.reset()
             recordPlay.setImageResource(R.drawable.ic_play_record)
-        }
-    }
-
-
-    private fun closeTimer(seekBar: WaveformSeekBar) {
-        if (timer != null) {
-            timer!!.cancel()
-            seekBar.progress = 0
         }
     }
 

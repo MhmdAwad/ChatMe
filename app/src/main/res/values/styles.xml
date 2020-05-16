@@ -4,11 +4,16 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">#FFFF</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:statusBarColor">@color/whiteColor</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">#FFFF</item>
-        <item name="colorAccent">#F30000</item>
+
+    <style name="SearchViewStyle" parent="Widget.AppCompat.SearchView">
+        <item name="hintTextColor">@color/colorAccent</item>
+        <item name="editTextColor">@color/blackColor</item>
+        <item name="android:textColor">@color/blackColor</item>
+        <item name="android:editTextColor">@color/blackColor</item>
+        <item name="android:hint">Hi Friend</item>
     </style>
 
 </resources>

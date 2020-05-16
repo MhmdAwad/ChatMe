@@ -3,6 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <data>
+
+        <variable
+            name="mainPageVM"
+            type="com.mhmdawad.chatme.ui.activities.main_page.MainPageViewModel" />
+    </data>
+
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -21,6 +28,7 @@
                 android:background="@color/whiteColor">
 
                 <androidx.appcompat.widget.Toolbar
+                    android:id="@+id/mainPageToolbar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
 
@@ -29,24 +37,41 @@
                         android:layout_height="match_parent">
 
                         <TextView
+                            android:id="@+id/chatText"
                             android:layout_width="wrap_content"
                             android:layout_height="match_parent"
-                            android:text="Chats"
+                            android:text="@string/chats"
                             android:textColor="#000"
                             android:textSize="20sp"
-                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-condensed"
                             app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toStartOf="@+id/logoutButton"
-                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toStartOf="@+id/searchButton"
+                            app:layout_constraintStart_toEndOf="@+id/logoutButton"
                             app:layout_constraintTop_toTopOf="parent" />
 
                         <ImageView
                             android:id="@+id/logoutButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="@string/log_out_profile"
+                            android:onClick="@{()-> mainPageVM.logOut()}"
                             android:src="@drawable/ic_logout"
                             android:tint="#ADD8E0"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <androidx.appcompat.widget.SearchView
+                            android:id="@+id/searchButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            app:searchIcon="@drawable/ic_search"
+                            app:closeIcon="@drawable/ic_close"
+                            android:contentDescription="@string/search"
+                            android:onClick="@{()-> mainPageVM.logOut()}"
+                            android:theme="@style/SearchViewStyle"
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
@@ -68,10 +93,10 @@
             android:layout_gravity="bottom"
             android:backgroundTint="#ADD8E0"
             app:fabAlignmentMode="end"
+            app:fabAnimationMode="scale"
+            app:fabCradleMargin="10dp"
             app:fabCradleRoundedCornerRadius="20dp"
             app:fabCradleVerticalOffset="10dp"
-            app:fabCradleMargin="10dp"
-            app:fabAnimationMode="scale"
             app:hideOnScroll="true"
             app:menu="@menu/app_bar_items" />
 
@@ -80,10 +105,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="#606870"
-            app:elevation="0dp"
-            app:borderWidth="0dp"
-            app:tint="@color/whiteColor"
+            android:onClick="@{()-> mainPageVM.openContacts() }"
             android:src="@drawable/ic_add"
-            app:layout_anchor="@id/mainBottomAppBar"/>
+            app:borderWidth="0dp"
+            app:elevation="0dp"
+            app:layout_anchor="@id/mainBottomAppBar"
+            app:tint="@color/whiteColor" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>
