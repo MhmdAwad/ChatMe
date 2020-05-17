@@ -7,12 +7,10 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.SearchView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -24,14 +22,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.mhmdawad.chatme.databinding.ActivityMainPageBinding
-import com.mhmdawad.chatme.pojo.ConversationChatData
 import com.mhmdawad.chatme.pojo.MainChatData
 import com.mhmdawad.chatme.ui.fragments.conversation.ConversationFragment
 import com.mhmdawad.chatme.ui.activities.login.LoginActivity
 import com.mhmdawad.chatme.ui.fragments.contact.ContactsFragment
 import com.mhmdawad.chatme.ui.fragments.settings.SettingsFragment
 import com.mhmdawad.chatme.utils.Contacts
-import com.mhmdawad.chatme.utils.RecyclerViewClick
 import com.squareup.picasso.Picasso
 
 
@@ -70,7 +66,7 @@ class MainPageActivity : AppCompatActivity() {
         })
     }
 
-    private fun fillAdapter() {
+    private fun fillChatAdapter() {
         mainPageViewModel.chatsLiveData().observe(this, Observer {
             for (chatData in it) {
                 if (chatData.chatType == "direct")
@@ -82,15 +78,15 @@ class MainPageActivity : AppCompatActivity() {
     }
 
     private fun getContactName(phoneNumber: String): String {
-        return if (checkPermission())
+        return if (checkContactsPermission())
             Contacts.getContactName(phoneNumber, this.applicationContext)
         else
             phoneNumber
     }
 
-    private fun profileContacts() {
-        mainPageViewModel.openContacts.observe(this, androidx.lifecycle.Observer {
-            if (checkPermission()) {
+    private fun openContactsFragment() {
+        mainPageViewModel.openContactLiveData().observe(this, androidx.lifecycle.Observer {
+            if (checkContactsPermission()) {
                 if (this.supportFragmentManager.findFragmentById(android.R.id.content) == null) {
                     this.supportFragmentManager.beginTransaction()
                         .add(android.R.id.content, ContactsFragment())
@@ -98,11 +94,11 @@ class MainPageActivity : AppCompatActivity() {
                         .commit()
                 }
             } else
-                requestPermissions()
+                requestContactsPermissions()
         })
     }
 
-    private fun checkPermission(): Boolean {
+    private fun checkContactsPermission(): Boolean {
         val readContact = Manifest.permission.READ_CONTACTS
         val writeContact = Manifest.permission.WRITE_CONTACTS
         return (ContextCompat.checkSelfPermission(
@@ -116,7 +112,7 @@ class MainPageActivity : AppCompatActivity() {
     }
 
 
-    private fun requestPermissions() {
+    private fun requestContactsPermissions() {
         ActivityCompat.requestPermissions(
             this,
             arrayOf(
@@ -126,7 +122,7 @@ class MainPageActivity : AppCompatActivity() {
         )
     }
 
-    private fun logOut() {
+    private fun profileLogOut() {
         mainPageViewModel.logoutLiveData().observe(this, androidx.lifecycle.Observer {
             if (it) {
                 val intent = Intent(applicationContext, LoginActivity::class.java)
@@ -137,10 +133,10 @@ class MainPageActivity : AppCompatActivity() {
         })
     }
 
-    private fun mainItemsClicked() {
+    private fun bottomBarItems() {
         binding.mainBottomAppBar.setOnMenuItemClickListener {
             when (it.itemId) {
-                R.id.menuSettings -> profileSettings()
+                R.id.menuSettings -> openSettingsFragment()
                 R.id.menuSarahah -> Toast.makeText(
                     applicationContext,
                     "SARAHAH",
@@ -169,22 +165,8 @@ class MainPageActivity : AppCompatActivity() {
         }
     }
 
-
-    override fun onStart() {
-        super.onStart()
-        initRecyclerView()
-        mainItemsClicked()
-        fillAdapter()
-        startConversationActivity()
-        initSearchView()
-        logOut()
-        profileContacts()
-        openUserImage()
-    }
-
-
-    private fun openUserImage() {
-        mainPageViewModel.imageMutableLiveData.observe(this, Observer {
+    private fun showImageDialog() {
+        mainPageViewModel.showImage().observe(this, Observer {
             val builder: AlertDialog.Builder = AlertDialog.Builder(this)
             val viewGroup: ViewGroup = this.findViewById(android.R.id.content)
             val dialogView: View =
@@ -205,7 +187,7 @@ class MainPageActivity : AppCompatActivity() {
         })
     }
 
-    private fun startConversationActivity() {
+    private fun openConversationFragment() {
         mainPageViewModel.openChatConversation().observe(this, Observer {
             val conversationFragment =
                 ConversationFragment.newInstance(
@@ -221,14 +203,25 @@ class MainPageActivity : AppCompatActivity() {
         })
     }
 
-
-    private fun profileSettings() {
+    private fun openSettingsFragment() {
         if (supportFragmentManager.findFragmentById(android.R.id.content) == null) {
             supportFragmentManager.beginTransaction()
                 .add(android.R.id.content, SettingsFragment())
                 .addToBackStack(null)
                 .commit()
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        initRecyclerView()
+        bottomBarItems()
+        fillChatAdapter()
+        openConversationFragment()
+        initSearchView()
+        profileLogOut()
+        openContactsFragment()
+        showImageDialog()
     }
 
     override fun onPause() {

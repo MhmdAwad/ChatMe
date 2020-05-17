@@ -156,7 +156,7 @@ class CreateGroupFragment : Fragment(), RecyclerViewClick {
             when (type) {
                 0 -> map[list[i].uid] = "0"
                 1 -> map[list[i].uid] = list[i].Number
-                2 -> map[list[i].uid] = list[i].Image
+                2 -> map[list[i].uid] = list[i].image
             }
 
         }

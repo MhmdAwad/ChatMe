@@ -8,7 +8,7 @@
         android:icon="@drawable/ic_account_setting"/>
     <item
         android:id="@+id/menuSarahah"
-        android:title="Status"
+        android:title="Sarahah"
         app:showAsAction="always"
         android:icon="@drawable/bar_sarahah"/>
 

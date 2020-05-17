@@ -4,8 +4,10 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.ContactsContract
+import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import com.mhmdawad.chatme.pojo.UserData
 
 class Contacts {
 
@@ -32,5 +34,9 @@ class Contacts {
             Log.d("sssss", name)
             return name
         }
+
+
+
+
     }
 }

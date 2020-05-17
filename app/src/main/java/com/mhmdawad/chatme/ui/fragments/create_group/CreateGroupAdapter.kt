@@ -44,8 +44,8 @@ class CreateGroupAdapter :
         private var checkBox: CheckBox = itemView.findViewById(R.id.checkBox)
 
         fun bind(user: UserData){
-            if(user.Image.startsWith("https://firebasestorage"))
-                Picasso.get().load(user.Image).transform(CircleTransform()).into(image)
+            if(user.image.startsWith("https://firebasestorage"))
+                Picasso.get().load(user.image).transform(CircleTransform()).into(image)
             else
                 image.setImageResource(R.drawable.ic_default_user)
 

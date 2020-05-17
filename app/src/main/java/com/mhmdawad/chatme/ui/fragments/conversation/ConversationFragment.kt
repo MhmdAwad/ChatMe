@@ -57,7 +57,6 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
     private lateinit var userUid: String
     private lateinit var chatID: String
     private lateinit var binding: ActivityConversationBinding
-    //    private lateinit var recordFilePath: String
     private var send: Int? = null
     private var receive: Int? = null
     private var soundPool: SoundPool? = null
@@ -185,7 +184,6 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
                 file.mkdirs()
 
             fileName = "${file.absolutePath}/file.mp3"
-
             recorder = MediaRecorder().apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
@@ -208,7 +206,6 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
             )
         }
     }
-
 
     private fun checkPermission(): Boolean {
         val result = checkSelfPermission(
@@ -234,7 +231,6 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
     }
 
     private fun changeTypingVisibility() {
-        Log.d("what????", binding.typingStatus.text.toString())
         if (binding.typingStatus.text.toString() == "")
             binding.typingStatus.visibility = View.GONE
         else
@@ -248,9 +244,7 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
                 handler.postDelayed(userStoppedTyping, 500)
             }
 
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                return
-            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) { return }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (binding.messageEditText.text.isEmpty()) {
@@ -265,7 +259,6 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
 
             val handler = Handler()
             var userStoppedTyping = Runnable {
-                Log.d("FFFF","asfasfasfasfas")
                 userTypingStatus("")
             }
         })
@@ -408,7 +401,6 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
 
                 override fun onChildAdded(p0: DataSnapshot, p1: String?) {
                     conversationAdapter.addMessage(arrayListOf(p0.getValue(MessageData::class.java)!!))
-                    Log.d("onChildChanged", p0.getValue(MessageData::class.java).toString())
                     binding.chatMessagesRV.scrollToPosition(conversationAdapter.itemCount - 1)
                 }
 
@@ -592,9 +584,7 @@ class ConversationFragment : Fragment(), DisplayImageFragment.NewMessage,
                         .setValue("0")
                 }
             })
-
     }
-
 
     // userName -> Message
     override fun openUserImage(userImage: String, message: String) {

@@ -11,6 +11,7 @@ import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.databinding.MainChatRvItemsBinding
 import com.mhmdawad.chatme.pojo.ConversationChatData
 import com.mhmdawad.chatme.pojo.MainChatData
+import java.util.*
 import kotlin.collections.ArrayList
 
 class MainChatAdapter(private val mainPageViewModel: MainPageViewModel) :
@@ -34,23 +35,15 @@ class MainChatAdapter(private val mainPageViewModel: MainPageViewModel) :
     override fun onBindViewHolder(holder: ChatsViewHolder, position: Int) =
         holder.bind(chatList[position])
 
-    fun addMainChats(user: ArrayList<MainChatData>) {
-        chatList.clear()
-        chatList.addAll(user)
-        chatListFull = ArrayList(chatList)
-        chatList.sortByDescending { it.lastMessageDate }
-        notifyDataSetChanged()
-    }
-
 
     inner class ChatsViewHolder(private val binding: MainChatRvItemsBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(user: MainChatData) {
             if(user.chatType == "direct"){
-                directChat(user)
+                directChatConversation(user)
             }else{
-                groupChat(user)
+                groupChatConversation(user)
             }
             binding.mainChatVM = mainPageViewModel
             binding.myUid = FirebaseAuth.getInstance().uid
@@ -58,15 +51,23 @@ class MainChatAdapter(private val mainPageViewModel: MainPageViewModel) :
             binding.executePendingBindings()
         }
 
-        private fun directChat(user: MainChatData){
+        private fun directChatConversation(user: MainChatData){
             val conversation = ConversationChatData(user.chatID, user.offlineUserName, user.usersImage[user.userUid]!!,user.chatType,user.userUid)
             binding.conversationData = conversation
         }
 
-        private fun groupChat(user: MainChatData){
+        private fun groupChatConversation(user: MainChatData){
             val conversation = ConversationChatData(user.chatID, user.groupName, user.groupImage,user.chatType,"")
             binding.conversationData = conversation
         }
+    }
+
+    fun addMainChats(user: ArrayList<MainChatData>) {
+        chatList.clear()
+        chatList.addAll(user)
+        chatListFull = ArrayList(chatList)
+        chatList.sortByDescending { it.lastMessageDate }
+        notifyDataSetChanged()
     }
 
     override fun getFilter(): Filter = chatFilter
@@ -77,9 +78,9 @@ class MainChatAdapter(private val mainPageViewModel: MainPageViewModel) :
             if (constraint == null || constraint.isEmpty())
                 filteredChatList.addAll(chatListFull)
             else {
-                val filteredString = constraint.toString().toLowerCase().trim()
+                val filteredString = constraint.toString().toLowerCase(Locale.ROOT).trim()
                 for (chatItem in chatListFull) {
-                    if (chatItem.offlineUserName.toLowerCase().contains(filteredString))
+                    if (chatItem.offlineUserName.toLowerCase(Locale.ROOT).contains(filteredString))
                         filteredChatList.add(chatItem)
 
                 }

@@ -5,7 +5,6 @@
 
     <data>
         <import type="android.view.View" />
-
         <variable
             name="mainChatData"
             type="com.mhmdawad.chatme.pojo.MainChatData" />
@@ -99,6 +98,7 @@
                     android:layout_toEndOf="@id/lastImageView"
                     android:ellipsize="end"
                     android:maxLines="1"
+                    android:layout_toStartOf="@id/unreadMessages"
                     android:text="@{mainChatData.lastMessage}"
                     android:textAlignment="viewStart"
                     android:textColor="#808080" />
@@ -117,7 +117,7 @@
                     android:maxLines="1"
                     android:text="@{mainChatData.unreadMessage[myUid]}"
                     android:textColor="#FFFF"
-                    android:visibility='@{ mainChatData.unreadMessage[myUid].equals("0")?View.GONE:View.VISIBLE }'
+                    android:visibility='@{ mainChatData.unreadMessage[myUid].equals("0")?View.INVISIBLE:View.VISIBLE }'
                     tools:text="5" />
 
                 <ImageView

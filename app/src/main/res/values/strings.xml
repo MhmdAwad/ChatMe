@@ -10,4 +10,6 @@
     <string name="seen_image">seen Message</string>
     <string name="media_icon">media icon</string>
     <string name="search">Search</string>
+    <string name="about">About</string>
+    <string name="contacts">Contacts</string>
 </resources>
