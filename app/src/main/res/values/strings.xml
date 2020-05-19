@@ -13,4 +13,6 @@
     <string name="about">About</string>
     <string name="contacts">Contacts</string>
     <string name="type_a_message">Type a message..</string>
+    <string name="enter_your_group_name">Enter your group Name:</string>
+    <string name="create">Create</string>
 </resources>

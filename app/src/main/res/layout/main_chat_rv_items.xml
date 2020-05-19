@@ -97,10 +97,11 @@
                     android:layout_marginTop="8dp"
                     android:layout_toEndOf="@id/lastImageView"
                     android:ellipsize="end"
+                    android:gravity="start"
+                    tools:text="lnnlknlknlknlknklnkln"
                     android:maxLines="1"
                     android:layout_toStartOf="@id/unreadMessages"
                     android:text="@{mainChatData.lastMessage}"
-                    android:textAlignment="viewStart"
                     android:textColor="#808080" />
 
 
@@ -128,7 +129,7 @@
                     android:layout_marginTop="11dp"
                     android:contentDescription="@string/seen_image"
                     android:src='@{mainChatData.unreadMessage[mainChatData.userUid].equals("0") ? @drawable/ic_conversation_seen_message: @drawable/ic_done}'
-                    android:visibility="@{mainChatData.lastSender.equals(myUid)? View.VISIBLE:View.GONE}" />
+                    android:visibility="@{mainChatData.lastSender.equals(myUid)? View.VISIBLE:View.INVISIBLE}" />
 
                 <ImageView
                     android:id="@+id/lastImageView"
