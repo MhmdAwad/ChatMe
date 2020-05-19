@@ -7,6 +7,7 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -41,12 +42,24 @@ class MainPageActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main_page)
-        mainPageViewModel = ViewModelProvider(this).get(MainPageViewModel::class.java)
-        binding.mainPageVM = mainPageViewModel
+        mainPageViewModel = ViewModelProvider(this, MainPageFactory(contentResolver)).get(MainPageViewModel::class.java)
         binding.lifecycleOwner = this
+        binding.mainPageVM = mainPageViewModel
+
+        openContactsFragment()
+        mainPageViewModel.fetchConversations()
+        initRecyclerView()
+        bottomBarItems()
+        fillChatAdapter()
+        openConversationFragment()
+        initSearchView()
+        profileLogOut()
+        showImageDialog()
+        if (!checkContactsPermission())
+            requestContactsPermissions()
     }
 
-    private fun initSearchView(){
+    private fun initSearchView() {
         binding.searchButton.setOnSearchClickListener { binding.chatText.visibility = View.GONE }
         binding.searchButton.setOnCloseListener {
             binding.chatText.visibility = View.VISIBLE
@@ -68,33 +81,23 @@ class MainPageActivity : AppCompatActivity() {
 
     private fun fillChatAdapter() {
         mainPageViewModel.chatsLiveData().observe(this, Observer {
-            for (chatData in it) {
-                if (chatData.chatType == "direct")
-                    chatData.offlineUserName =
-                        getContactName(chatData.usersPhone[chatData.userUid]!!)
-            }
             chatAdapter.addMainChats(it as ArrayList<MainChatData>)
         })
     }
 
-    private fun getContactName(phoneNumber: String): String {
-        return if (checkContactsPermission())
-            Contacts.getContactName(phoneNumber, this.applicationContext)
-        else
-            phoneNumber
-    }
-
     private fun openContactsFragment() {
         mainPageViewModel.openContactLiveData().observe(this, androidx.lifecycle.Observer {
-            if (checkContactsPermission()) {
-                if (this.supportFragmentManager.findFragmentById(android.R.id.content) == null) {
-                    this.supportFragmentManager.beginTransaction()
-                        .add(android.R.id.content, ContactsFragment())
-                        .addToBackStack(null)
-                        .commit()
-                }
-            } else
-                requestContactsPermissions()
+            if (it) {
+                if (checkContactsPermission()) {
+                    if (this.supportFragmentManager.findFragmentById(android.R.id.content) == null) {
+                        this.supportFragmentManager.beginTransaction()
+                            .add(android.R.id.content, ContactsFragment())
+                            .addToBackStack(null)
+                            .commit()
+                    }
+                } else
+                    requestContactsPermissions()
+            }
         })
     }
 
@@ -188,17 +191,19 @@ class MainPageActivity : AppCompatActivity() {
     }
 
     private fun openConversationFragment() {
-        mainPageViewModel.openChatConversation().observe(this, Observer {
-            val conversationFragment =
-                ConversationFragment.newInstance(
-                    it.key, it.userName, it.userImage,
-                    it.chatType, it.userUid
-                )
-            if (supportFragmentManager.findFragmentById(android.R.id.content) == null) {
-                supportFragmentManager.beginTransaction()
-                    .add(android.R.id.content, conversationFragment)
-                    .addToBackStack(null)
-                    .commit()
+        mainPageViewModel.chatMutableLiveData.observe(this, Observer {
+            if (it != null) {
+                if (supportFragmentManager.findFragmentById(android.R.id.content) == null) {
+                    val conversationFragment =
+                        ConversationFragment.newInstance(
+                            it.key, it.userName, it.userImage,
+                            it.chatType, it.userUid
+                        )
+                    supportFragmentManager.beginTransaction()
+                        .add(android.R.id.content, conversationFragment)
+                        .addToBackStack(null)
+                        .commit()
+                }
             }
         })
     }
@@ -210,18 +215,6 @@ class MainPageActivity : AppCompatActivity() {
                 .addToBackStack(null)
                 .commit()
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        initRecyclerView()
-        bottomBarItems()
-        fillChatAdapter()
-        openConversationFragment()
-        initSearchView()
-        profileLogOut()
-        openContactsFragment()
-        showImageDialog()
     }
 
     override fun onPause() {
@@ -237,7 +230,7 @@ class MainPageActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if(!binding.searchButton.isIconified) {
+        if (!binding.searchButton.isIconified) {
             binding.searchButton.isIconified = true
             return
         }

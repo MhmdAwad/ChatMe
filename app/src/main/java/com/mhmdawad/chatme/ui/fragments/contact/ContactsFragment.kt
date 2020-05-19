@@ -37,6 +37,7 @@ class ContactsFragment : Fragment() {
     ): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_contacts, container, false)
         contactsViewModel = ViewModelProvider(this, getViewModelFactory()).get(ContactsViewModel::class.java)
+        binding.lifecycleOwner=this
         return binding.root
     }
 

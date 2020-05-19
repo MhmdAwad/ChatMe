@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-
         <variable
             name="mainPageVM"
             type="com.mhmdawad.chatme.ui.activities.main_page.MainPageViewModel" />
@@ -105,8 +104,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="#606870"
-            android:onClick="@{()-> mainPageVM.openContacts() }"
             android:src="@drawable/ic_add"
+            android:onClick="@{() -> mainPageVM.openContacts()}"
             app:borderWidth="0dp"
             app:elevation="0dp"
             app:layout_anchor="@id/mainBottomAppBar"

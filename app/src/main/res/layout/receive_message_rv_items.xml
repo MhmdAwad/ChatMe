@@ -1,8 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <import type="android.view.View"/>
+        <variable
+            name="messageData"
+            type="com.mhmdawad.chatme.pojo.MessageData" />
+
+        <variable
+            name="chatType"
+            type="String" />
+
+        <variable
+            name="usersImages"
+            type="java.util.HashMap&lt;String, String>" />
+        <variable
+            name="usersNames"
+            type="java.util.HashMap&lt;String, String>" />
+
+        <variable
+            name="seenMessage"
+            type="Boolean" />
+
+        <variable
+            name="myUid"
+            type="String" />
+        <variable
+            name="conversationVM"
+            type="com.mhmdawad.chatme.ui.fragments.conversation.ConversationViewModel" />
+    </data>
+
+<LinearLayout
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingTop="2dp"
@@ -12,10 +43,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="90dp"
         android:background="@drawable/received_rectangle"
-        android:maxWidth="240dp"
-        android:minWidth="100dp"
         android:orientation="vertical">
 
         <TextView
@@ -23,10 +52,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textStyle="bold"
-            android:visibility="gone"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            tools:text="userName"/>
+            android:visibility='@{chatType.equals("group")? View.VISIBLE: View.GONE}'
+            android:textColors="@{messageData.senderUid}"
+            android:text="@{usersNames[messageData.senderUid]}"/>
         <LinearLayout
             android:id="@+id/recordContainer"
             android:layout_width="wrap_content"
@@ -34,7 +64,7 @@
             android:layout_margin="4dp"
             android:gravity="center_vertical"
             android:minWidth="200dp"
-            android:visibility="gone"
+            android:visibility='@{messageData.type.equals("Voice Record")? View.VISIBLE: View.GONE}'
             android:orientation="horizontal">
 
             <ImageButton
@@ -51,6 +81,7 @@
                 android:layout_height="30dp"
                 app:wave_gravity="center"
                 app:wave_progress="0"
+                seekBarSample="@{30}"
                 app:wave_width="5dp"
                 app:wave_gap="2dp"
                 app:wave_min_height="5dp"
@@ -61,7 +92,7 @@
                     android:id="@+id/recordImage"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:src="@drawable/ic_default_user" />
+                    recordImage="@{usersImages[messageData.senderUid]}" />
 
         </LinearLayout>
 
@@ -75,17 +106,22 @@
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="4dp"
             android:textColor="#000"
-            android:visibility="gone"
+            imageSrc="@{messageData.mediaPath}"
+            android:onClick="@{() -> conversationVM.displayImage(messageData.mediaPath, messageData.type, messageData.message)}"
+            android:visibility='@{messageData.type.equals("Voice Record") || messageData.type.equals("message")? View.GONE: View.VISIBLE}'
             tools:text="hi man, how are you?" />
+
 
         <TextView
             android:id="@+id/text_message_body"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="4dp"
+            android:text="@{messageData.message}"
+            android:visibility='@{messageData.type.equals("Voice Record")?View.GONE: View.VISIBLE}'
             android:textColor="#101013"
             tools:text="hi man, how are you?" />
 
@@ -102,7 +138,7 @@
                 android:layout_gravity="end"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
-                android:text="6:73 PM"
+                bindingText="@{messageData.date}"
                 android:textColor="#BDBCBC"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -114,6 +150,7 @@
             android:id="@+id/messageSeen"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone" />
+            android:visibility="gone"/>
     </LinearLayout>
 </LinearLayout>
+</layout>

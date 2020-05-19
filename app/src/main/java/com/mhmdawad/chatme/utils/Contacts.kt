@@ -1,5 +1,6 @@
 package com.mhmdawad.chatme.utils
 
+import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
@@ -12,7 +13,7 @@ import com.mhmdawad.chatme.pojo.UserData
 class Contacts {
 
     companion object {
-        fun getContactName(number: String, context: Context): String {
+        fun getContactName(number: String, contentResolver: ContentResolver): String {
             var name = number
             val projection = arrayOf(
                 ContactsContract.PhoneLookup.DISPLAY_NAME,
@@ -23,7 +24,7 @@ class Contacts {
                 Uri.encode(number)
             )
             val cursor: Cursor? =
-                context.contentResolver.query(contactUri, projection, null, null, null)
+                contentResolver.query(contactUri, projection, null, null, null)
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
                     name =

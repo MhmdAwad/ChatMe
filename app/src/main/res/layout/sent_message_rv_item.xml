@@ -1,127 +1,155 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:paddingTop="2dp"
-    android:paddingBottom="2dp">
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <import type="android.view.View"/>
+        <variable
+            name="messageData"
+            type="com.mhmdawad.chatme.pojo.MessageData" />
 
-    <LinearLayout
-        android:layout_width="wrap_content"
+        <variable
+            name="usersImages"
+            type="java.util.HashMap&lt;String, String>" />
+
+        <variable
+            name="chatType"
+            type="String" />
+        <variable
+            name="seenMessage"
+            type="Boolean" />
+
+        <variable
+            name="conversationVM"
+            type="com.mhmdawad.chatme.ui.fragments.conversation.ConversationViewModel" />
+    </data>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="90dp"
         android:layout_marginEnd="8dp"
-        android:background="@drawable/sent_rectangle"
-        android:maxWidth="240dp"
-        android:minWidth="140dp"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/groupUserName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:textStyle="bold"
-            android:visibility="gone"
-            tools:text="userName" />
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp">
 
         <LinearLayout
-            android:id="@+id/recordContainer"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="4dp"
-            android:gravity="center"
-            android:minWidth="200dp"
-            android:orientation="horizontal"
-            android:visibility="gone">
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/sent_rectangle"
+            android:orientation="vertical">
 
+            <TextView
+                android:id="@+id/groupUserName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="userName" />
+
+            <LinearLayout
+                android:id="@+id/recordContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="4dp"
+                android:gravity="center"
+                android:minWidth="200dp"
+                android:orientation="horizontal"
+                android:visibility='@{messageData.type.equals("Voice Record")? View.VISIBLE: View.GONE}'>
+
+
+                <ImageView
+                    android:id="@+id/recordImage"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    recordImage="@{usersImages[messageData.senderUid]}"
+                    android:background="@drawable/circle_white_shape" />
+
+                <ImageButton
+                    android:id="@+id/recordPlay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@null"
+                    android:src="@drawable/ic_play_record" />
+
+                <com.masoudss.lib.WaveformSeekBar
+                    android:id="@+id/recordSeekbar"
+                    android:layout_width="140dp"
+                    android:layout_height="30dp"
+                    app:wave_background_color="#565C62"
+                    app:wave_corner_radius="2dp"
+                    app:wave_gap="2dp"
+                    app:wave_gravity="center"
+                    app:wave_min_height="5dp"
+                    app:wave_progress="0"
+                    seekBarSample="@{30}"
+                    app:wave_width="5dp" />
+
+            </LinearLayout>
 
             <ImageView
-                android:id="@+id/recordImage"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/circle_white_shape"
-                android:src="@drawable/ic_default_user" />
+                android:id="@+id/image_message_body"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="4dp"
+                android:textColor="#000"
+                android:onClick="@{() -> conversationVM.displayImage(messageData.mediaPath, messageData.type, messageData.message)}"
+                imageSrc="@{messageData.mediaPath}"
+                android:visibility='@{messageData.type.equals("Voice Record") ||messageData.type.equals("message")? View.GONE: View.VISIBLE}'
+                tools:text="hi man, how are you?" />
 
-            <ImageButton
-                android:id="@+id/recordPlay"
+            <TextView
+                android:id="@+id/text_message_body"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:background="@null"
-                android:src="@drawable/ic_play_record" />
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="4dp"
+                android:textColor="#101013"
+                android:text="@{messageData.message}"
+                android:visibility='@{messageData.type.equals("Voice Record")?View.GONE: View.VISIBLE}'
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="hellohellohe" />
 
-            <com.masoudss.lib.WaveformSeekBar
-                android:id="@+id/recordSeekbar"
-                android:layout_width="140dp"
-                android:layout_height="30dp"
-                app:wave_background_color="#565C62"
-                app:wave_corner_radius="2dp"
-                app:wave_gap="2dp"
-                app:wave_gravity="center"
-                app:wave_min_height="5dp"
-                app:wave_progress="0"
-                app:wave_width="5dp" />
-
-        </LinearLayout>
-
-        <ImageView
-            android:id="@+id/image_message_body"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="4dp"
-            android:textColor="#000"
-            android:visibility="gone"
-            tools:text="hi man, how are you?" />
-
-        <TextView
-            android:id="@+id/text_message_body"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="4dp"
-            android:textColor="#101013"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:text="hello" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:gravity="center_vertical|end"
-            android:orientation="horizontal"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_message_body">
-
-            <TextView
-                android:id="@+id/messageDate"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:text="9:32 PM"
-                android:textColor="#BDBCBC" />
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:gravity="center_vertical|end"
+                android:orientation="horizontal"
+                android:layout_gravity="end"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/text_message_body">
 
-            <ImageView
-                android:id="@+id/messageSeen"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="4dp"
-                android:src="@drawable/ic_conversation_seen_message" />
+                <TextView
+                    android:id="@+id/messageDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    bindingText="@{messageData.date}"
+                    android:textColor="#BDBCBC" />
+
+                <ImageView
+                    android:id="@+id/messageSeen"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="4dp"
+                    android:src='@{ seenMessage ? @drawable/ic_done : @drawable/ic_conversation_seen_message}'/>
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
 
-</RelativeLayout>
+    </RelativeLayout>
+</layout>

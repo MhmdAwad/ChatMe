@@ -3,6 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <data>
+        <variable
+            name="conversationVM"
+            type="com.mhmdawad.chatme.ui.fragments.conversation.ConversationViewModel" />
+    </data>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -46,7 +51,8 @@
                 android:background="@null"
                 android:textColorHint="#565C62"
                 android:textColor="@color/blackColor"
-                android:hint="Type a message.."
+                android:hint="@string/type_a_message"
+                android:text="@={conversationVM.messageEditTextLiveData}"
                 android:inputType="textPersonName"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/sendButton"
@@ -62,6 +68,7 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
                 android:background="@null"
+                android:visibility="@{conversationVM.changeViewsVisibilityLiveData}"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -74,6 +81,7 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginEnd="16dp"
                 android:layout_marginBottom="8dp"
+                android:visibility="@{conversationVM.changeViewsVisibilityLiveData}"
                 android:background="@null"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/sendButton"
@@ -89,6 +97,7 @@
                 android:layout_marginBottom="8dp"
                 android:padding="8dp"
                 android:background="@null"
+                android:onClick="@{ () -> conversationVM.clickSendMessage()}"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -167,8 +176,8 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:textColor="#565C62"
-                            android:visibility="gone"
-                            tools:text="TextView" />
+                            android:visibility="@{conversationVM.typingStatusVisibilityLiveData}"
+                            android:text="@{conversationVM.typingStatusMutableLiveData}" />
                     </LinearLayout>
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.appcompat.widget.Toolbar>

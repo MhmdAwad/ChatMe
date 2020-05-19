@@ -9,12 +9,16 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.mhmdawad.chatme.utils.CircleTransform
 import com.mhmdawad.chatme.R
 import com.mhmdawad.chatme.databinding.FragmentSettingsBinding
+import com.mhmdawad.chatme.pojo.ConversationInfo
+import com.mhmdawad.chatme.ui.fragments.conversation.ConversationViewModel
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.include_toolbar.view.*
+import java.io.File
 
 
 class SettingsFragment : Fragment() {
@@ -28,9 +32,20 @@ class SettingsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_settings, container, false)
-        settingsViewModel = ViewModelProvider(this).get(SettingsViewModel::class.java)
+        settingsViewModel = ViewModelProvider(this, getViewModelFactory()).get(SettingsViewModel::class.java)
         binding.lifecycleOwner = this
         return binding.root
+    }
+
+    private fun getViewModelFactory(): ViewModelProvider.Factory {
+        return object : ViewModelProvider.Factory {
+            override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+                return SettingsViewModel(
+                    ""
+
+                ) as T
+            }
+        }
     }
 
     private fun statusListener() {
