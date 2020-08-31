@@ -15,6 +15,7 @@ import com.mhmdawad.chatme.pojo.MessageData
 import com.mhmdawad.chatme.utils.Contacts
 import com.mhmdawad.chatme.utils.VoiceAudio
 import java.io.File
+import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -117,10 +118,8 @@ class ConversationViewModel(
     }
 
     private fun createRecordFile(): String {
-        val file = conversationInfo.recordFile
-        if (!file.exists())
-            file.mkdirs()
-        return "${file.absolutePath}/file.mp3"
+        val file = File.createTempFile("file",".mp3",conversationInfo.recordFile)
+        return file.absolutePath
     }
 
     val requestPermissions = MutableLiveData<Boolean>().apply { value = false }
@@ -220,6 +219,7 @@ class ConversationViewModel(
 
                 override fun onChildAdded(p0: DataSnapshot, p1: String?) {
                     addMessagesData.value = arrayListOf(p0.getValue(MessageData::class.java)!!)
+                    seenMessages()
                 }
 
                 override fun onChildRemoved(p0: DataSnapshot) {

@@ -51,13 +51,13 @@
 
             <LinearLayout
                 android:id="@+id/recordContainer"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
-                android:gravity="center"
                 android:minWidth="200dp"
+                android:gravity="center"
                 android:orientation="horizontal"
-                android:visibility='@{messageData.type.equals("Voice Record")? View.VISIBLE: View.GONE}'>
+                android:visibility= '@{messageData.type.equals("Voice Record")? View.VISIBLE: View.GONE}'>
 
 
                 <ImageView
@@ -101,7 +101,7 @@
                 android:textColor="#000"
                 android:onClick="@{() -> conversationVM.displayImage(messageData.mediaPath, messageData.type, messageData.message)}"
                 imageSrc="@{messageData.mediaPath}"
-                android:visibility='@{messageData.type.equals("Voice Record") ||messageData.type.equals("message")? View.GONE: View.VISIBLE}'
+                android:visibility= '@{messageData.type.equals("Voice Record") ||messageData.type.equals("message")? View.GONE: View.VISIBLE}'
                 tools:text="hi man, how are you?" />
 
             <TextView

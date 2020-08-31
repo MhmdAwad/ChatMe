@@ -52,7 +52,6 @@ class VoiceAudio {
 
 
     fun voiceRecord(fileName: String) {
-        Log.d("tty", fileName)
         recorder = MediaRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)

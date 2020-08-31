@@ -3,6 +3,7 @@ package com.mhmdawad.chatme.ui.fragments.create_group
 import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -53,6 +54,7 @@ class CreateGroupFragment : Fragment(), RecyclerViewClick {
 
     private fun initRecyclerView() {
         val usersList = arguments!!.getParcelableArrayList<UserData>("contactsList")!!.distinct()
+        Log.d("TEst", "initRecyclerView: " + usersList.size)
         val contactsAdapter =
             CreateGroupAdapter(usersList as ArrayList<UserData>)
         binding.groupRV.apply {

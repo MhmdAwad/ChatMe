@@ -78,11 +78,12 @@ class ConversationAdapter(
     fun addUsersName(groupUsersName: HashMap<String, String>) {
         usersNames.putAll(groupUsersName)
     }
+
     fun addMessage(message: ArrayList<MessageData>) {
-        val index = conversationList.size-1
+        val index = conversationList.size+1
         conversationList.addAll(message)
         if(index > 1)
-            notifyItemRangeInserted(index,message.size )
+            notifyItemRangeInserted(index,message.size)
         else
             notifyDataSetChanged()
     }
